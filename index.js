@@ -8,7 +8,7 @@ http.createServer(function (req, res) {
         res.statusCode = 404;
         res.end('no such location');
     });
-}).listen(443);
+}).listen( process.env.PORT );
 
 handler.on('error', function (err) {
     console.error('Error:', err.message)
@@ -18,5 +18,5 @@ handler.on('pull_request', function (event) {
     console.log('Received a pull_request event of %s for %s as %s',
         event.payload.action,
         event.payload.number,
-        event.payload.changes );
+        event.payload.label );
 });

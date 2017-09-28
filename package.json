@@ -1,0 +1,23 @@
+{
+  "name": "wp-e2e-tests-gh-bridge",
+  "version": "1.0.0",
+  "description": "A bridge to link the wp-calypso repository to the wp-e2e-tests",
+  "main": "index.js",
+  "dependencies": {
+    "github-webhook-handler": "0.6.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Automattic/wp-e2e-tests-gh-bridge.git"
+  },
+  "author": "",
+  "license": "GPL-2.0+",
+  "bugs": {
+    "url": "https://github.com/Automattic/wp-e2e-tests-gh-bridge/issues"
+  },
+  "homepage": "https://github.com/Automattic/wp-e2e-tests-gh-bridge#readme"
+}

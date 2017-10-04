@@ -4,7 +4,8 @@
   "description": "A bridge to link the wp-calypso repository to the wp-e2e-tests",
   "main": "index.js",
   "dependencies": {
-    "github-webhook-handler": "0.6.0"
+    "github-webhook-handler": "0.6.0",
+    "request": "2.83.0"
   },
   "devDependencies": {},
   "scripts": {
@@ -19,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/Automattic/wp-e2e-tests-gh-bridge/issues"
   },
-  "homepage": "https://github.com/Automattic/wp-e2e-tests-gh-bridge#readme"
+  "homepage": "https://github.com/Automattic/wp-e2e-tests-gh-bridge#readme",
+  "engines": {
+    "node": "8.6.0"
+  }
 }

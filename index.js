@@ -4,8 +4,8 @@ const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
 const calypsoProject = 'Automattic/wp-e2e-tests-gh-bridge';
-const e2eTestsProject = 'Automattic/wp-e2e-tests-for-branches';
-const e2eTestsBranch = 'try/triggering-from-other-project';
+const e2eTestsProject = 'Automattic/wp-e2e-tests-canary';
+const e2eTestsBranch = 'try/wpcalypso-branch-execution';
 const executionLabel = '[Status] Needs Review';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsProject }/tree/${ e2eTestsBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
@@ -14,8 +14,7 @@ const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/status
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
 
-const prContext = 'ci/e2e-canary-tests';
-
+const prContext = 'ci/wp-e2e-tests-canary';
 
 const handler = createHandler( { path: gitHubWebHookPath, secret: process.env.BRIDGE_SECRET } );
 
@@ -36,7 +35,7 @@ http.createServer(function (req, res) {
             body = Buffer.concat( body ).toString();
             try {
                 let payload = JSON.parse( body ).payload;
-                if ( payload && payload.build_parameters && payload.build_parameters.sha ) {
+                if ( payload && payload.build_parameters && payload.build_parameters.sha && payload.build_parameters.calypsoProject === calypsoProject ) {
                     let status = 'success';
                     let desc = 'Your PR passed the e2e canary tests on CircleCI!';
                     if ( payload.status !== 'success' ) {
@@ -89,10 +88,12 @@ handler.on('pull_request', function (event) {
 
         const buildParameters = {
             build_parameters: {
-                liveBranches: 'true',
-                branchName: branchName,
+                LIVEBRANCHES: 'true',
+                BRANCHNAME: branchName,
+                RUN_ARGS: '-b ' + branchName,
                 sha: sha,
-                pullRequestNum: pullRequestNum
+                pullRequestNum: pullRequestNum,
+                calypsoProject: calypsoProject
             }
         };
 

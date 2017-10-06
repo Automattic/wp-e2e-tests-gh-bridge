@@ -3,10 +3,10 @@ const request = require ( 'request' );
 const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
-const calypsoProject = 'Automattic/wp-e2e-tests-gh-bridge';
-const e2eTestsProject = 'Automattic/wp-e2e-tests-canary';
-const e2eTestsBranch = 'try/wpcalypso-branch-execution';
-const executionLabel = '[Status] Needs Review';
+const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-e2e-tests-gh-bridge';
+const e2eTestsProject = process.env.E2E_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
+const e2eTestsBranch = process.env.E2E_BRANCH || 'master';
+const triggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsProject }/tree/${ e2eTestsBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
@@ -79,7 +79,7 @@ handler.on('error', function (err) {
 });
 
 handler.on('pull_request', function (event) {
-    if ( event.payload.repository.full_name === calypsoProject && event.payload.action === 'labeled' && event.payload.label.name === executionLabel ) {
+    if ( event.payload.repository.full_name === calypsoProject && event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
 

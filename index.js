@@ -41,13 +41,17 @@ http.createServer(function (req, res) {
             try {
                 let payload = JSON.parse( body ).payload;
                 if ( payload && payload.build_parameters && payload.build_parameters.sha && payload.build_parameters.calypsoProject === calypsoProject ) {
-                    let status = 'success';
-                    let desc = 'Your PR passed the e2e canary tests on CircleCI!';
-                    if ( payload.status !== 'success' ) {
+                    let status, desc;
+                    if (payload.outcome === 'success') {
+                        status = 'success';
+                        desc = 'Your PR passed the e2e canary tests on CircleCI!';
+                    } else if (payload.outcome === 'failed') {
                         status = 'failure';
                         desc = `Canary test status: ${payload.status}`;
+                    } else {
+                        status = 'error';
+                        desc = `Canary test status: ${payload.status}`;
                     }
-
                     // POST to GitHub to provide status
                     let gitHubStatus = {
                         state: status,

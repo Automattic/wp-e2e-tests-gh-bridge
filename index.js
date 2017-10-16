@@ -4,12 +4,15 @@ const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
 const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-e2e-tests-gh-bridge';
-const e2eTestsProject = process.env.E2E_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
-const e2eTestsBranch = process.env.E2E_BRANCH || 'master';
+const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
+const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
+const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
+
 const triggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
 
-const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsProject }/tree/${ e2eTestsBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
+const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
+const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -81,7 +84,20 @@ handler.on('error', function (err) {
 handler.on('pull_request', function (event) {
     if ( event.payload.repository.full_name === calypsoProject && event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
+        let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
+
+        // Check if there's a matching branch in the main e2e test repository
+        request.get( {
+            headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+            url: gitHubMainE2EBranchURL + branchName,
+        }, function( err, response ) {
+                if ( response.statusCode === 200 ) {
+                    e2eBranchName = branchName;
+                } else {
+                    e2eBranchName = 'master';
+                }
+        } );
 
         const sha = event.payload.pull_request.head.sha;
         const pullRequestNum = event.payload.pull_request.number;
@@ -90,6 +106,7 @@ handler.on('pull_request', function (event) {
             build_parameters: {
                 LIVEBRANCHES: 'true',
                 BRANCHNAME: branchName,
+                E2E_BRANCH: e2eBranchName,
                 RUN_ARGS: '-b ' + branchName,
                 sha: sha,
                 pullRequestNum: pullRequestNum,

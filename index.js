@@ -88,17 +88,37 @@ handler.on('error', function (err) {
 });
 
 handler.on('pull_request', function (event) {
+    const pullRequestNum = event.payload.pull_request.number;
+    const pullRequestStatus = event.payload.pull_request.state;
+    const loggedInUsername = event.payload.sender.login;
+    const pullRequestHeadLabel = event.payload.pull_request.head.label;
+    const repositoryName = event.payload.repository.full_name;
+
     // Check if we should only run for certain users
-    if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( event.payload.sender.login ) === -1 ) {
+    if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( loggedInUsername ) === -1 ) {
+        console.log(  `Ignoring pull request '${ pullRequestNum }' as we're only running for certain users and '${ loggedInUsername }' is not in '${ flowPatrolUsernames }'` );
+        return true;
+    }
+
+    // Make sure the PR is in the correct repository
+    if ( repositoryName !== calypsoProject ) {
+        console.log(  `Ignoring pull request '${ pullRequestNum }' as the repository '${ repositoryName }' is not '${ calypsoProject }'` );
+        return true;
+    }
+
+    // Make sure the PR is still open
+    if ( pullRequestStatus !== 'open' ) {
+        console.log(  `Ignoring pull request '${ pullRequestNum }' as the status '${ pullRequestStatus }' is not 'open'` );
         return true;
     }
 
     // Ignore OSS requests - check for location of head to indicate forks
     if ( event.payload.pull_request.head.label.indexOf( 'Automattic:' ) !== 0 ) {
+        console.log(  `Ignoring pull request '${ pullRequestNum }' as this is from a fork: '${ pullRequestHeadLabel }'` );
         return true;
     }
 
-    if ( event.payload.repository.full_name === calypsoProject && event.payload.pull_request.state === 'open' && event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
+    if ( event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
@@ -115,7 +135,6 @@ handler.on('pull_request', function (event) {
             }
 
             const sha = event.payload.pull_request.head.sha;
-            const pullRequestNum = event.payload.pull_request.number;
 
             const buildParameters = {
                 build_parameters: {

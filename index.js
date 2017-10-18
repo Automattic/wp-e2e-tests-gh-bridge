@@ -88,11 +88,17 @@ handler.on('error', function (err) {
 });
 
 handler.on('pull_request', function (event) {
+    // Check if we should only run for certain users
     if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( event.payload.sender.login ) === -1 ) {
         return true;
     }
 
-    if ( event.payload.repository.full_name === calypsoProject && event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
+    // Ignore OSS requests - check for location of head to indicate forks
+    if ( event.payload.pull_request.head.label.indexOf( 'Automattic:' ) !== 0 ) {
+        return true;
+    }
+
+    if ( event.payload.repository.full_name === calypsoProject && event.payload.pull_request.state === 'open' && event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );

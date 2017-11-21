@@ -123,7 +123,7 @@ handler.on('pull_request', function (event) {
         let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
 
-        // Check if there's a matching branch in the main e2e test repository
+        // Check if there's a matching branch in the main e2e test repository 
         request.get( {
             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
             url: gitHubMainE2EBranchURL + branchName,

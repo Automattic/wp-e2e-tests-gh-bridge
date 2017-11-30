@@ -4,8 +4,8 @@ A webhooks client that sits between wp-calypso pull requests and e2e canary test
 
 These provide two webhook paths to do this:
 
-1. https://a8cghcirclebridge.herokuapp.com/ghwebhook: this is the GitHub webhook that takes the pull request event and kicks off a corresponding CircleCI e2e canary test build
-2. https://a8cghcirclebridge.herokuapp.com/circleciwebhook: this is the CircleCI webhook that takes the circleCI webhook when a build is finished and updates the GithHub wp-calypso PR with the appropriate execution result
+1. https://a8c-gh-e2e-bridge.go-vip.co/ghwebhookk: this is the GitHub webhook that takes the pull request event and kicks off a corresponding CircleCI e2e canary test build
+2. https://a8c-gh-e2e-bridge.go-vip.co/circleciwebhook: this is the CircleCI webhook that takes the circleCI webhook when a build is finished and updates the GithHub wp-calypso PR with the appropriate execution result
 
 ## Local development using ngrok (on macOS)
 
@@ -20,12 +20,6 @@ These provide two webhook paths to do this:
 9. Add your ngrok webhook URLs to both Github Project Webhooks (via the UI) and Circle (via `circle.yml`) - when adding the Webhook to GitHub only select the 'Pull Request' event and make sure you choose content type of 'application/json'
 10. As you make changes you will need to re-run `npm start` but ngrok will continue to work
 
-## Deployment to heroku
+## Deployment to VIP GO
 
-These webhooks are hosted on heroku. It's easy to deploy using the heroku cli:
-
-`git push heroku` or `git push heroku localbranchname:master -f`(if deploying from non-master)
-
-You can view the logs via heroku or using
-
-`heroku logs`
+These webhooks are now hosted on VIP GO (see links above). Just merge to master and it will be deployed 😊

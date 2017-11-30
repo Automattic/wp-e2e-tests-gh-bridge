@@ -4,7 +4,7 @@ A webhooks client that sits between wp-calypso pull requests and e2e canary test
 
 These provide two webhook paths to do this:
 
-1. https://a8c-gh-e2e-bridge.go-vip.co/ghwebhookk: this is the GitHub webhook that takes the pull request event and kicks off a corresponding CircleCI e2e canary test build
+1. https://a8c-gh-e2e-bridge.go-vip.co/ghwebhook: this is the GitHub webhook that takes the pull request event and kicks off a corresponding CircleCI e2e canary test build
 2. https://a8c-gh-e2e-bridge.go-vip.co/circleciwebhook: this is the CircleCI webhook that takes the circleCI webhook when a build is finished and updates the GithHub wp-calypso PR with the appropriate execution result
 
 ## Local development using ngrok (on macOS)

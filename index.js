@@ -195,7 +195,7 @@ handler.on('pull_request', function (event) {
     }
     // Comment about A/B tests
     else if ( action === 'synchronize' || action === 'opened' ) {
-        const comment = `It looks like you're updating the [active A/B tests](${ wpCalysoABTestsFile }). Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](update/ab-tests-doco-for-e2e-tests). 🙏`;
+        const comment = `It looks like you're updating the [active A/B tests](/${wpCalysoABTestsFile}). Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](/client/lib/abtest/README.md). 🙏`;
         request.get( {
             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
             url: prURL + '/files'

@@ -17,6 +17,7 @@ const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/status
 const gitHubIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
+const gitHubMainURL = `https://github.com/${ calypsoProject }`;
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -195,7 +196,7 @@ handler.on('pull_request', function (event) {
     }
     // Comment about A/B tests
     else if ( action === 'synchronize' || action === 'opened' ) {
-        const comment = `It looks like you're updating the [active A/B tests](/${wpCalysoABTestsFile}). Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](/client/lib/abtest/README.md). 🙏`;
+        const comment = `It looks like you're updating the [active A/B tests](${ gitHubMainURL }/${ wpCalysoABTestsFile }). Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](${ gitHubMainURL }/client/lib/abtest/README.md). 🙏`;
         request.get( {
             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
             url: prURL + '/files'

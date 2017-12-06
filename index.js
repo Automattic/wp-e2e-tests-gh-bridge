@@ -9,7 +9,7 @@ const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 const flowPatrolOnly = process.env.FLOW_PATROL_ONLY || 'false';
 
-const flowPatrolUsernames = [ 'alisterscott' ];
+const flowPatrolUsernames = [ 'alisterscott', 'brbrr', 'bsessions85', 'hoverduck', 'lancewillett', 'markryall', 'rachelmcr' ];
 const triggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;

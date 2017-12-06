@@ -2,6 +2,8 @@
 
 A webhooks client that sits between wp-calypso pull requests and e2e canary tests to execute the e2e tests against pull requests and provide status updates.
 
+These webhooks also comment on wp-calypso PRs that modify the active A/B tests file to ensure these are updated in the e2e tests project.
+
 These provide two webhook paths to do this:
 
 1. https://a8c-gh-e2e-bridge.go-vip.co/ghwebhook: this is the GitHub webhook that takes the pull request event and kicks off a corresponding CircleCI e2e canary test build

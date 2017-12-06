@@ -14,7 +14,9 @@ const triggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
+const gitHubIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
+const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -97,6 +99,8 @@ handler.on('pull_request', function (event) {
     const loggedInUsername = event.payload.sender.login;
     const pullRequestHeadLabel = event.payload.pull_request.head.label;
     const repositoryName = event.payload.repository.full_name;
+    const action = event.payload.action;
+    const prURL = event.payload.pull_request.url;
 
     // Check if we should only run for certain users
     if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( loggedInUsername ) === -1 ) {
@@ -122,7 +126,8 @@ handler.on('pull_request', function (event) {
         return true;
     }
 
-    if ( event.payload.action === 'labeled' && event.payload.label.name === triggerLabel ) {
+    // canary test execution on label
+    if ( action === 'labeled' && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
@@ -186,6 +191,54 @@ handler.on('pull_request', function (event) {
                     console.log( 'RESPONSE::' + JSON.stringify( response ) );
                 }
             } );
+        } );
+    }
+    // Comment about A/B tests
+    else if ( action === 'synchronize' || action === 'opened' ) {
+        const comment = `It looks like you're updating the [active A/B tests](${ wpCalysoABTestsFile }). Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](update/ab-tests-doco-for-e2e-tests). 🙏`;
+        request.get( {
+            headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+            url: prURL + '/files'
+    } , function ( error, body, response ) {
+            if ( error || body.statusCode !== 200 ) {
+                console.log( 'Error trying to retrieve files for PR: ' + JSON.stringify( error ) );
+                return false;
+            }
+            const files = JSON.parse(body.body);
+            for (let file of files ) {
+                if ( file.filename === wpCalysoABTestsFile ) {
+                    console.log( 'Found a change to the AB tests file - check if we have already commented on this PR' );
+
+                    request.get( {
+                        headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+                        url: gitHubIssuessURL + pullRequestNum + "/comments"
+                    } , function ( error, body, response ) {
+                        if ( error || body.statusCode !== 200 ) {
+                            console.log( 'Error trying to retrieve comments for PR: ' + JSON.stringify( error ) );
+                            return false;
+                        }
+                        const comments = JSON.parse(body.body);
+                        for (let existingComment of comments ) {
+                            if ( existingComment.body === comment ) {
+                                console.log( 'Found existing comment about A/B tests - exiting' );
+                                return false;
+                            }
+                        }
+                        request.post( {
+                            headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+                            url: gitHubIssuessURL + pullRequestNum + "/comments",
+                            body: JSON.stringify( { "body": comment } )
+                        }, function( responseError ) {
+                            if ( responseError ) {
+                                console.log( 'ERROR: ' + responseError  );
+                            } else {
+                                console.log( 'GitHub Pull Request changing AB test files commented on' );
+                            }
+                        } );
+                    } );
+                    break;
+                }
+            }
         } );
     }
 });

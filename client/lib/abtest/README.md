@@ -9,7 +9,7 @@ Turn on debugging in the JavaScript developer console to view details about what
 
 # Usage
 
-In `active-tests.js`, add your test info to the exported object:
+In `active-tests-not.js`, add your test info to the exported object:
 
 ```js
 module.exports = {
@@ -140,7 +140,7 @@ Every time you add a new A/B test to Calypso you must update the [e2e tests repo
 
 For example, if you were adding:
 
-In `active-tests.js`:
+In `active-tests-not.js`:
 
 ```js
 module.exports = {

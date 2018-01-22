@@ -17,6 +17,7 @@ const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/status
 const gitHubIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
+const dserveBaseUrl = 'https://dserve.a8c.com/';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -194,7 +195,7 @@ handler.on('pull_request', function (event) {
         } );
     }
     // Comment about A/B tests
-    else if ( action === 'synchronize' || action === 'opened' ) {
+    if ( action === 'synchronize' || action === 'opened' ) {
         const comment = `It looks like you're updating \`client/lib/abtest/active-tests.js\`. Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](https://github.com/${ calypsoProject }/tree/master/client/lib/abtest#updating-our-end-to-end-tests-to-avoid-inconsistencies-with-ab-tests). 🙏`;
         request.get( {
             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
@@ -240,5 +241,23 @@ handler.on('pull_request', function (event) {
                 }
             }
         } );
+    }
+    // Comment about dserve
+    if ( action === 'opened' ) {
+        const branchName = event.payload.pull_request.head.ref;
+        const liveBranchURL = `${ dserveBaseUrl }?branch=${ branchName }`;
+        const comment = `Test live in Docker at: ${ liveBranchURL }`;
+        request.post( {
+            headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+            url: gitHubIssuessURL + pullRequestNum + "/comments",
+            body: JSON.stringify( { "body": comment } )
+        }, function( responseError ) {
+            if ( responseError ) {
+                console.log( 'ERROR: ' + responseError  );
+            } else {
+                console.log( 'GitHub Pull Request commented on with dserve URL' );
+            }
+        } );
+        request.get( liveBranchURL );
     }
 });

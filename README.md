@@ -19,8 +19,8 @@ These provide two webhook paths to do this:
 6. `npm start` which starts this server on port 7777
 7. In another terminal tab, run `ngrok http 7777` which should provide you a HTTPS url to your localhost server: eg. `https://675bbbef.ngrok.io -> localhost:7777`
 8. Make sure you can access your webhook: eg. `curl https://675bbbef.ngrok.io/circleciwebhook`
-9. Add your ngrok webhook URLs to both Github Project Webhooks (via the UI) and Circle (via `circle.yml`) - when adding the Webhook to GitHub only select the 'Pull Request' event and make sure you choose content type of 'application/json' 
-10. As you make changes you will need to re-run `npm start` but ngrok will continue to work 
+9. Add your ngrok webhook URLs to both Github Project Webhooks (via the UI) and Circle (via `circle.yml`) - when adding the Webhook to GitHub only select the 'Pull Request' event and make sure you choose content type of 'application/json'
+10. As you make changes you will need to re-run `npm start` but ngrok will continue to work
 
 ## Deployment to VIP GO
 

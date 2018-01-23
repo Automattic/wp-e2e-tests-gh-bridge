@@ -17,7 +17,7 @@ const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/status
 const gitHubIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
-const dserveBaseUrl = 'https://dserve.a8c.com/';
+const dserveBaseUrl = 'https://calypso.live/';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';

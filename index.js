@@ -11,7 +11,7 @@ const flowPatrolOnly = process.env.FLOW_PATROL_ONLY || 'false';
 
 const flowPatrolUsernames = [ 'alisterscott', 'brbrr', 'bsessions85', 'hoverduck', 'lancewillett', 'markryall', 'rachelmcr' ];
 const canaryTriggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
-const fullSuiteTriggerLabel = process.env.FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA!)';
+const fullSuiteTriggerLabel = process.env.FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
@@ -49,13 +49,13 @@ http.createServer(function (req, res) {
                     let status, desc;
                     if (payload.outcome === 'success') {
                         status = 'success';
-                        desc = 'Your PR passed the e2e canary tests on CircleCI!';
+                        desc = 'Your PR passed the e2e tests on CircleCI!';
                     } else if (payload.outcome === 'failed') {
                         status = 'failure';
-                        desc = `Canary test status: ${payload.status}`;
+                        desc = `e2e test status: ${payload.status}`;
                     } else {
                         status = 'error';
-                        desc = `Canary test status: ${payload.status}`;
+                        desc = `e2e test status: ${payload.status}`;
                     }
                     // POST to GitHub to provide status
                     let gitHubStatus = {
@@ -129,7 +129,7 @@ handler.on('pull_request', function (event) {
     // canary test execution on label
     if ( action === 'labeled' && ( label === canaryTriggerLabel || label === fullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
-        let e2eBranchName, prContext, testFlag;
+        let e2eBranchName, prContext, description, testFlag;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
 
         // Check if there's a matching branch in the main e2e test repository
@@ -145,9 +145,11 @@ handler.on('pull_request', function (event) {
             if ( label === canaryTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-canary';
                 testFlag = '-C';
+                description = 'The e2e canary tests are running against your PR';
             } else if ( label === fullSuiteTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-full';
                 testFlag = '-g';
+                description = 'The e2e full suite tests are running against your PR';
             } else {
                 console.log( `Unknown label: '${ label }'` );
             }
@@ -181,7 +183,7 @@ handler.on('pull_request', function (event) {
                         state: 'pending',
                         target_url: JSON.parse( response.body ).build_url,
                         context: prContext,
-                        description: 'The e2e canary tests are running against your PR'
+                        description: description
                     };
                     request.post( {
                         headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },

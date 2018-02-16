@@ -130,7 +130,6 @@ handler.on('pull_request', function (event) {
     if ( action === 'labeled' && ( label === canaryTriggerLabel || label === fullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName, prContext, description, testFlag;
-        console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
 
         // Check if there's a matching branch in the main e2e test repository
         request.get( {
@@ -146,10 +145,12 @@ handler.on('pull_request', function (event) {
                 prContext = 'ci/wp-e2e-tests-canary';
                 testFlag = '-C';
                 description = 'The e2e canary tests are running against your PR';
+                console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
             } else if ( label === fullSuiteTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-full';
                 testFlag = '-g';
                 description = 'The e2e full suite tests are running against your PR';
+                console.log( 'Executing e2e full suite tests for branch: \'' + branchName + '\'' );
             } else {
                 console.log( `Unknown label: '${ label }'` );
             }

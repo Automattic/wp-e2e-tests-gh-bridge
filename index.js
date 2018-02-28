@@ -100,6 +100,7 @@ handler.on('pull_request', function (event) {
     const repositoryName = event.payload.repository.full_name;
     const action = event.payload.action;
     const prURL = event.payload.pull_request.url;
+    const label = event.payload.label ? event.payload.label.name : null;
 
     // Check if we should only run for certain users
     if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( loggedInUsername ) === -1 ) {
@@ -126,7 +127,7 @@ handler.on('pull_request', function (event) {
     }
 
     // canary test execution on label
-    if ( action === 'labeled' && ( event.payload.label.name === canaryTriggerLabel || event.payload.label.name === fullSuiteTriggerLabel ) ) {
+    if ( action === 'labeled' && ( label === canaryTriggerLabel || label === fullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName, prContext, description, testFlag;
 

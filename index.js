@@ -3,7 +3,7 @@ const request = require ( 'request' );
 const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
-const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-e2e-tests-gh-bridge';
+const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';

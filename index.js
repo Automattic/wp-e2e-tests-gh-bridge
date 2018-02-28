@@ -3,7 +3,7 @@ const request = require ( 'request' );
 const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
-const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-e2e-tests-gh-bridge';
+const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
@@ -127,7 +127,7 @@ handler.on('pull_request', function (event) {
     }
 
     // canary test execution on label
-    if ( action === 'labeled' && event.payload.label.name === triggerLabel ) {
+    if ( action === 'labeled' && event.payload.label && event.payload.label.name === triggerLabel ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName;
         console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );

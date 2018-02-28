@@ -3,8 +3,6 @@ const request = require ( 'request' );
 const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
-
-// bump
 const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
@@ -102,7 +100,6 @@ handler.on('pull_request', function (event) {
     const repositoryName = event.payload.repository.full_name;
     const action = event.payload.action;
     const prURL = event.payload.pull_request.url;
-    const label = event.payload.label.name;
 
     // Check if we should only run for certain users
     if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( loggedInUsername ) === -1 ) {
@@ -129,7 +126,7 @@ handler.on('pull_request', function (event) {
     }
 
     // canary test execution on label
-    if ( action === 'labeled' && ( label === canaryTriggerLabel || label === fullSuiteTriggerLabel ) ) {
+    if ( action === 'labeled' && ( event.payload.label.name === canaryTriggerLabel || event.payload.label.name === fullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName, prContext, description, testFlag;
 

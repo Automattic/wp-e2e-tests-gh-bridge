@@ -7,9 +7,7 @@ const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
-const flowPatrolOnly = process.env.FLOW_PATROL_ONLY || 'false';
 
-const flowPatrolUsernames = [ 'alisterscott', 'brbrr', 'bsessions85', 'hoverduck', 'lancewillett', 'markryall', 'rachelmcr' ];
 const canaryTriggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
 const fullSuiteTriggerLabel = process.env.FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
 
@@ -101,12 +99,6 @@ handler.on('pull_request', function (event) {
     const action = event.payload.action;
     const prURL = event.payload.pull_request.url;
     const label = event.payload.label ? event.payload.label.name : null;
-
-    // Check if we should only run for certain users
-    if( flowPatrolOnly === 'true' && flowPatrolUsernames.indexOf( loggedInUsername ) === -1 ) {
-        console.log(  `Ignoring pull request '${ pullRequestNum }' as we're only running for certain users and '${ loggedInUsername }' is not in '${ flowPatrolUsernames }'` );
-        return true;
-    }
 
     // Make sure the PR is in the correct repository
     if ( repositoryName !== calypsoProject ) {

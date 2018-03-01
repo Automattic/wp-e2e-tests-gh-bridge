@@ -8,8 +8,8 @@ const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-t
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
-const canaryTriggerLabel = process.env.TRIGGER_LABEL || '[Status] Needs Review';
-const fullSuiteTriggerLabel = process.env.FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
+const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
+const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
 
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
@@ -119,7 +119,7 @@ handler.on('pull_request', function (event) {
     }
 
     // canary test execution on label
-    if ( action === 'labeled' && ( label === canaryTriggerLabel || label === fullSuiteTriggerLabel ) ) {
+    if ( action === 'labeled' && ( label === calypsoCanaryTriggerLabel || label === calypsoFullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName, prContext, description, testFlag;
 
@@ -133,12 +133,12 @@ handler.on('pull_request', function (event) {
             } else {
                 e2eBranchName = 'master';
             }
-            if ( label === canaryTriggerLabel ) {
+            if ( label === calypsoCanaryTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-canary';
                 testFlag = '-C';
                 description = 'The e2e canary tests are running against your PR';
                 console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
-            } else if ( label === fullSuiteTriggerLabel ) {
+            } else if ( label === calypsoFullSuiteTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-full';
                 testFlag = '-g';
                 description = 'The e2e full suite tests are running against your PR';

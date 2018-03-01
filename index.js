@@ -4,6 +4,7 @@ const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
 const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
+const jetpackProject = process.env.JETPACK_PROJECT || 'Automattic/wp-calypso';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
@@ -11,9 +12,12 @@ const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
 const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
 
+const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
+
 const triggerBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eTestsWrapperProject }/tree/${ e2eTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
-const gitHubStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
-const gitHubIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
+const gitHubCalypsoStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
+const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }/statuses/`;
+const gitHubCalypsoIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
 
@@ -43,7 +47,15 @@ http.createServer(function (req, res) {
             body = Buffer.concat( body ).toString();
             try {
                 let payload = JSON.parse( body ).payload;
-                if ( payload && payload.build_parameters && payload.build_parameters.sha && payload.build_parameters.calypsoProject === calypsoProject ) {
+                let statusURL;
+                if ( payload && payload.build_parameters && payload.build_parameters.calypsoProject === calypsoProject ) {
+                    statusURL = gitHubCalypsoStatusURL;
+                } else if ( payload && payload.build_parameters && payload.build_parameters.jetpackProject === jetpackProject ) {
+                    statusURL = gitHubJetpackStatusURL;
+                } else {
+                    console.log( 'Unknown project called from CircleCI' );
+                }
+                if ( statusURL && payload && payload.build_parameters && payload.build_parameters.sha ) {
                     let status, desc;
                     if (payload.outcome === 'success') {
                         status = 'success';
@@ -64,7 +76,7 @@ http.createServer(function (req, res) {
                     };
                     request.post( {
                         headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-                        url: gitHubStatusURL + payload.build_parameters.sha,
+                        url: statusURL + payload.build_parameters.sha,
                         body: JSON.stringify( gitHubStatus )
                     }, function( error ) {
                         if ( error ) {
@@ -93,16 +105,15 @@ handler.on('error', function (err) {
 handler.on('pull_request', function (event) {
     const pullRequestNum = event.payload.pull_request.number;
     const pullRequestStatus = event.payload.pull_request.state;
-    const loggedInUsername = event.payload.sender.login;
     const pullRequestHeadLabel = event.payload.pull_request.head.label;
     const repositoryName = event.payload.repository.full_name;
     const action = event.payload.action;
     const prURL = event.payload.pull_request.url;
     const label = event.payload.label ? event.payload.label.name : null;
 
-    // Make sure the PR is in the correct repository
-    if ( repositoryName !== calypsoProject ) {
-        console.log(  `Ignoring pull request '${ pullRequestNum }' as the repository '${ repositoryName }' is not '${ calypsoProject }'` );
+    // Make sure the PR is in the correct repositories
+    if ( repositoryName !== calypsoProject && repositoryName !== jetpackProject ) {
+        console.log(  `Ignoring pull request '${ pullRequestNum }' as the repository '${ repositoryName }' is not '${ calypsoProject }' or '${ jetpackProject }'` );
         return true;
     }
 
@@ -118,8 +129,8 @@ handler.on('pull_request', function (event) {
         return true;
     }
 
-    // canary test execution on label
-    if ( action === 'labeled' && ( label === calypsoCanaryTriggerLabel || label === calypsoFullSuiteTriggerLabel ) ) {
+    // Calypso test execution on label
+    if ( action === 'labeled' && repositoryName === calypsoProject && ( label === calypsoCanaryTriggerLabel || label === calypsoFullSuiteTriggerLabel ) ) {
         const branchName = event.payload.pull_request.head.ref;
         let e2eBranchName, prContext, description, testFlag;
 
@@ -137,12 +148,12 @@ handler.on('pull_request', function (event) {
                 prContext = 'ci/wp-e2e-tests-canary';
                 testFlag = '-C';
                 description = 'The e2e canary tests are running against your PR';
-                console.log( 'Executing e2e canary tests for branch: \'' + branchName + '\'' );
+                console.log( 'Executing CALYPSO e2e canary tests for branch: \'' + branchName + '\'' );
             } else if ( label === calypsoFullSuiteTriggerLabel ) {
                 prContext = 'ci/wp-e2e-tests-full';
                 testFlag = '-g';
                 description = 'The e2e full suite tests are running against your PR';
-                console.log( 'Executing e2e full suite tests for branch: \'' + branchName + '\'' );
+                console.log( 'Executing CALYPSO e2e full suite tests for branch: \'' + branchName + '\'' );
             } else {
                 console.log( `Unknown label: '${ label }'` );
             }
@@ -180,7 +191,7 @@ handler.on('pull_request', function (event) {
                     };
                     request.post( {
                         headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-                        url: gitHubStatusURL + sha,
+                        url: gitHubCalypsoStatusURL + sha,
                         body: JSON.stringify( gitHubStatus )
                     }, function( responseError ) {
                         if ( responseError ) {
@@ -199,8 +210,84 @@ handler.on('pull_request', function (event) {
             } );
         } );
     }
-    // Comment about A/B tests
-    else if ( action === 'synchronize' || action === 'opened' ) {
+    // Jetpack test execution on label
+    else if ( action === 'labeled' && repositoryName === jetpackProject && label === jetpackCanaryTriggerLabel  ) {
+        const branchName = event.payload.pull_request.head.ref;
+        let e2eBranchName, prContext, description, testFlag;
+
+        // Check if there's a matching branch in the main e2e test repository
+        request.get( {
+            headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+            url: gitHubMainE2EBranchURL + branchName,
+        }, function( err, response ) {
+            if ( response.statusCode === 200 ) {
+                e2eBranchName = branchName;
+            } else {
+                e2eBranchName = 'master';
+            }
+            if ( label === jetpackCanaryTriggerLabel ) {
+                prContext = 'ci/wp-e2e-tests-canary';
+                testFlag = '-J';
+                description = 'The e2e canary tests are running against your PR';
+                console.log( 'Executing JETPACK e2e canary tests for branch: \'' + branchName + '\'' );
+            } else {
+                console.log( `Unknown label: '${ label }'` );
+            }
+
+            const sha = event.payload.pull_request.head.sha;
+
+            const buildParameters = {
+                build_parameters: {
+                    LIVEBRANCHES: 'true',
+                    BRANCHNAME: branchName,
+                    E2E_BRANCH: e2eBranchName,
+                    RUN_ARGS: '-B ' + branchName,
+                    sha: sha,
+                    pullRequestNum: pullRequestNum,
+                    jetpackProject: jetpackProject,
+                    prContext: prContext,
+                    testFlag: testFlag
+                }
+            };
+
+            // POST to CircleCI to initiate the build
+            request.post( {
+                headers: {'content-type': 'application/json', accept: 'application/json'},
+                url: triggerBuildURL,
+                body: JSON.stringify( buildParameters )
+            } , function( error, response ) {
+                if ( response.statusCode === 201 ) {
+                    console.log( 'Tests have been kicked off - updating PR status now' );
+                    // Post status to Github
+                    const gitHubStatus = {
+                        state: 'pending',
+                        target_url: JSON.parse( response.body ).build_url,
+                        context: prContext,
+                        description: description
+                    };
+                    request.post( {
+                        headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+                        url: gitHubCalypsoStatusURL + sha,
+                        body: JSON.stringify( gitHubStatus )
+                    }, function( responseError ) {
+                        if ( responseError ) {
+                            console.log( 'ERROR: ' + responseError  );
+                        }
+                        console.log( 'GitHub status updated' );
+                    } );
+                }
+                else
+                {
+                    // Something went wrong - TODO: post message to the Pull Request about
+                    console.log( 'Something went wrong with executing e2e tests' );
+                    console.log( 'ERROR::' + error );
+                    console.log( 'RESPONSE::' + JSON.stringify( response ) );
+                }
+            } );
+        } );
+    }
+    // Comment about A/B tests for Calypso
+    else if ( repositoryName === calypsoProject && ( action === 'synchronize' || action === 'opened' ) ) {
         const comment = `It looks like you're updating \`client/lib/abtest/active-tests.js\`. Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](https://github.com/${ calypsoProject }/tree/master/client/lib/abtest#updating-our-end-to-end-tests-to-avoid-inconsistencies-with-ab-tests). 🙏`;
         request.get( {
             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
@@ -217,7 +304,7 @@ handler.on('pull_request', function (event) {
 
                     request.get( {
                         headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-                        url: gitHubIssuessURL + pullRequestNum + "/comments"
+                        url: gitHubCalypsoIssuessURL + pullRequestNum + "/comments"
                     } , function ( error, body, response ) {
                         if ( error || body.statusCode !== 200 ) {
                             console.log( 'Error trying to retrieve comments for PR: ' + JSON.stringify( error ) );
@@ -232,7 +319,7 @@ handler.on('pull_request', function (event) {
                         }
                         request.post( {
                             headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-                            url: gitHubIssuessURL + pullRequestNum + "/comments",
+                            url: gitHubCalypsoIssuessURL + pullRequestNum + "/comments",
                             body: JSON.stringify( { "body": comment } )
                         }, function( responseError ) {
                             if ( responseError ) {

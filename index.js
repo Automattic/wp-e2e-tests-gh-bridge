@@ -4,7 +4,7 @@ const createHandler = require ( 'github-webhook-handler' );
 const url = require( 'url' );
 
 const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
-const jetpackProject = process.env.JETPACK_PROJECT || 'Automattic/wp-calypso';
+const jetpackProject = process.env.JETPACK_PROJECT || 'Automattic/jetpack';
 const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
 const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
@@ -226,7 +226,7 @@ handler.on('pull_request', function (event) {
                 e2eBranchName = 'master';
             }
             if ( label === jetpackCanaryTriggerLabel ) {
-                prContext = 'ci/wp-e2e-tests-canary';
+                prContext = 'ci/jetpack-e2e-tests-canary';
                 testFlag = '-J';
                 description = 'The e2e canary tests are running against your PR';
                 console.log( 'Executing JETPACK e2e canary tests for branch: \'' + branchName + '\'' );
@@ -238,7 +238,6 @@ handler.on('pull_request', function (event) {
 
             const buildParameters = {
                 build_parameters: {
-                    LIVEBRANCHES: 'true',
                     BRANCHNAME: branchName,
                     E2E_BRANCH: e2eBranchName,
                     RUN_ARGS: '-B ' + branchName,
@@ -267,7 +266,7 @@ handler.on('pull_request', function (event) {
                     };
                     request.post( {
                         headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-                        url: gitHubCalypsoStatusURL + sha,
+                        url: gitHubJetpackStatusURL + sha,
                         body: JSON.stringify( gitHubStatus )
                     }, function( responseError ) {
                         if ( responseError ) {

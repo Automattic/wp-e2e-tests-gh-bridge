@@ -10,7 +10,7 @@ const e2eTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp
 const e2eTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
-const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing (BETA)';
+const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing';
 
 const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
 

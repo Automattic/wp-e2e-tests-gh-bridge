@@ -13,8 +13,8 @@ These provide two webhook paths to do this:
 
 1. Install ngrok - `brew install ngrok` on macOS
 2. Set bridge secret `export BRIDGE_SECRET='mysecret'` where `mysecret` is a generated key
-3. Set CircleCI key `export CIRCLECI_SECRET='circlesecret'` where `circlesecret` is a CircleCI API key
-4. Set GitHub Key `export GITHUB_SECRET='githubkey'` where `githubkey` is a GitHub API key
+3. Set CircleCI key `export CIRCLECI_SECRET='circlesecret'` where `circlesecret` is a [CircleCI API](https://circleci.com/account/api)
+4. Set GitHub Key `export GITHUB_SECRET='githubkey'` where `githubkey` is a [GitHub API key](https://github.com/settings/tokens)
 5. Optionally set `CALYPSO_PROJECT`, `E2E_MAIN_PROJECT`, `E2E_WRAPPER_PROJECT`, `E2E_WRAPPER_BRANCH`, `TRIGGER_LABEL` and `FLOW_PATROL_ONLY` if you wish to override the default values
 6. `npm start` which starts this server on port 7777
 7. In another terminal tab, run `ngrok http 7777` which should provide you a HTTPS url to your localhost server: eg. `https://675bbbef.ngrok.io -> localhost:7777`

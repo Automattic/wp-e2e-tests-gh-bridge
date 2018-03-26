@@ -4,6 +4,8 @@
   "description": "A bridge to link the wp-calypso repository to the wp-e2e-tests",
   "main": "index.js",
   "dependencies": {
+    "babel-eslint": "^8.2.2",
+    "eslint": "^4.19.0",
     "github-webhook-handler": "0.6.0",
     "request": "2.83.0"
   },
@@ -11,7 +13,7 @@
   "scripts": {
     "start": "node index.js",
     "build": "echo built",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/eslint index.js "
   },
   "repository": {
     "type": "git",

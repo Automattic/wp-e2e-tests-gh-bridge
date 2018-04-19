@@ -252,8 +252,8 @@ handler.on( 'pull_request', function( event ) {
 					request.get( {
 						headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
 						url: gitHubCalypsoIssuessURL + pullRequestNum + '/comments'
-					}, function( err, bod ) {
-						if ( err || bod.statusCode !== 200 ) {
+					}, function( err, body ) {
+						if ( err || body.statusCode !== 200 ) {
 							console.log( 'Error trying to retrieve comments for PR: ' + JSON.stringify( error ) );
 							return false;
 						}

@@ -1,3 +1,3 @@
 console.log( 's' );
 
-console.log( 't' );
+console.log( 'r' );

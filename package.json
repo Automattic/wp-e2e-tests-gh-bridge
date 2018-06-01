@@ -7,7 +7,7 @@
     "babel-eslint": "^8.2.2",
     "eslint": "^4.19.0",
     "github-webhook-handler": "0.6.0",
-    "request": "2.83.0"
+    "request": "^2.87.0"
   },
   "devDependencies": {},
   "scripts": {
@@ -26,6 +26,6 @@
   },
   "homepage": "https://github.com/Automattic/wp-e2e-tests-gh-bridge#readme",
   "engines": {
-    "node": "8.6.0"
+    "node": "8.11.2"
   }
 }

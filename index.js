@@ -107,7 +107,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 			LIVEBRANCHES: liveBranches,
 			BRANCHNAME: branchName,
 			E2E_BRANCH: e2eBranchName,
-			RUN_ARGS: branchArg + ' ' + branchName,
+			RUN_ARGS: branchArg + ' ' + sha,
 			sha: sha,
 			pullRequestNum: pullRequestNum,
 			calypsoProject: calypsoProjectSpecified,

@@ -209,16 +209,16 @@ handler.on( 'pull_request', function( event ) {
 				// Canary Tests
 				description = 'The e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-b', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, calypsoProject );
 				// IE11 Canary Tests
 				description = 'The IE11 e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-b', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, calypsoProject );
 			}
 			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
 				description = 'The e2e full suite tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e full suite tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-b', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-g', description, sha, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-g', description, sha, calypsoProject );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

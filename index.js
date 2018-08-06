@@ -12,6 +12,7 @@ const e2eCanaryTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
 const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing';
+const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 
 const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
 
@@ -19,9 +20,9 @@ const triggerFullBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2e
 const triggerCanaryBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eCanaryTestsWrapperProject }/tree/${ e2eCanaryTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubCalypsoStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
 const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }/statuses/`;
-const gitHubCalypsoIssuessURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
+const gitHubCalypsoIssuesURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
-const wpCalysoABTestsFile = 'client/lib/abtest/active-tests.js';
+const wpCalypsoABTestsFile = 'client/lib/abtest/active-tests.js';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -195,7 +196,7 @@ handler.on( 'pull_request', function( event ) {
 	}
 
 	// Calypso test execution on label
-	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === calypsoProject && ( labelsArray.includes( calypsoCanaryTriggerLabel ) || labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) ) {
+	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === calypsoProject && ( labelsArray.includes( calypsoCanaryTriggerLabel ) || labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) ) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
 		let e2eBranchName, description;
@@ -205,11 +206,11 @@ handler.on( 'pull_request', function( event ) {
 			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
 			url: gitHubMainE2EBranchURL + branchName,
 		}, function( err, response ) {
+			e2eBranchName = 'master';
 			if ( response.statusCode === 200 ) {
 				e2eBranchName = branchName;
-			} else {
-				e2eBranchName = 'master';
 			}
+
 			if ( labelsArray.includes( calypsoCanaryTriggerLabel ) ) {
 				// Canary Tests
 				description = 'The e2e canary tests are running against your PR';
@@ -223,11 +224,14 @@ handler.on( 'pull_request', function( event ) {
 				description = 'The Safari v10 e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, calypsoProject );
-			}
-			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
-				description = 'The e2e full suite tests are running against your PR';
-				console.log( 'Executing CALYPSO e2e full suite tests for branch: \'' + branchName + '\'' );
+			} else if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
+				description = 'The e2e full WPCOM suite tests are running against your PR';
+				console.log( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-g', description, sha, false, calypsoProject );
+			} else if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
+				description = 'The e2e full Jetpack suite tests are running against your PR';
+				console.log( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j', description, sha, false, calypsoProject );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label
@@ -263,12 +267,12 @@ handler.on( 'pull_request', function( event ) {
 			}
 			const files = JSON.parse( body.body );
 			for ( let file of files ) {
-				if ( file.filename === wpCalysoABTestsFile ) {
+				if ( file.filename === wpCalypsoABTestsFile ) {
 					console.log( 'Found a change to the AB tests file - check if we have already commented on this PR' );
 
 					request.get( {
 						headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-						url: gitHubCalypsoIssuessURL + pullRequestNum + '/comments'
+						url: gitHubCalypsoIssuesURL + pullRequestNum + '/comments'
 					}, function( err, body ) {
 						if ( err || body.statusCode !== 200 ) {
 							console.log( 'Error trying to retrieve comments for PR: ' + JSON.stringify( error ) );
@@ -283,7 +287,7 @@ handler.on( 'pull_request', function( event ) {
 						}
 						request.post( {
 							headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-							url: gitHubCalypsoIssuessURL + pullRequestNum + '/comments',
+							url: gitHubCalypsoIssuesURL + pullRequestNum + '/comments',
 							body: JSON.stringify( { body: comment } )
 						}, function( responseError ) {
 							if ( responseError ) {

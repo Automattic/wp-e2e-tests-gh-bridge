@@ -105,7 +105,7 @@ handler.on( 'error', function( err ) {
 	console.error( 'Error:', err.message );
 } );
 
-function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified ) {
+function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null ) {
 	const buildParameters = {
 		build_parameters: {
 			LIVEBRANCHES: liveBranches,
@@ -120,6 +120,10 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 			testFlag: testFlag
 		}
 	};
+
+	if ( envVars ) {
+		Object.assign(buildParameters.build_parameters, envVars)
+	}
 
 	const triggerBuildURL = isCanary ? triggerCanaryBuildURL : triggerFullBuildURL;
 
@@ -230,8 +234,9 @@ handler.on( 'pull_request', function( event ) {
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-g', description, sha, false, calypsoProject );
 			} else if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
 				description = 'The e2e full Jetpack suite tests are running against your PR';
+				const envVars = { JETPACKHOST: 'PRESSABLEBLEEDINGEDGE' };
 				console.log( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j', description, sha, false, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j', description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

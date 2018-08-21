@@ -219,15 +219,15 @@ handler.on( 'pull_request', function( event ) {
 				// Canary Tests
 				description = 'The e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-p -C', description, sha, true, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, true, calypsoProject );
 				// IE11 Canary Tests
 				description = 'The IE11 e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-p -z', description, sha, true, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, true, calypsoProject );
 				// Safari v10 Canary Tests
 				description = 'The Safari v10 e2e canary tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-p -y', description, sha, true, calypsoProject );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, calypsoProject );
 			} else if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
 				description = 'The e2e full WPCOM suite tests are running against your PR';
 				console.log( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );

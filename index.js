@@ -124,7 +124,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	};
 
 	if ( envVars ) {
-		Object.assign(buildParameters.build_parameters, envVars)
+		Object.assign( buildParameters.build_parameters, envVars )
 	}
 
 	const triggerBuildURL = isCanary ? triggerCanaryBuildURL : triggerFullBuildURL;

@@ -155,8 +155,6 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 				statusURL = gitHubJetpackStatusURL;
 			} else if ( calypsoProjectSpecified === e2eTestsMainProject ) {
 				statusURL = gitHubE2EStatusURL;
-			} else {
-				log.info( 'Unknown project called from CircleCI' );
 			}
 			request.post( {
 				headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },

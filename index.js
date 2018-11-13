@@ -203,7 +203,7 @@ handler.on( 'pull_request', function( event ) {
 		return true;
 	}
 
-	if ( event.payload.action === 'synchronize' ) {
+	if ( event.payload.action === 'synchronize' || event.payload.action === 'opened' ) {
 		let mappedLabels = labels.map( l => l.name );
 		labelsArray = labelsArray.concat( mappedLabels );
 	}

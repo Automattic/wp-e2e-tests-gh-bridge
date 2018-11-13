@@ -204,7 +204,7 @@ handler.on( 'pull_request', function( event ) {
 		return true;
 	}
 
-	if ( event.payload.action === 'synchronize' || ( event.payload.action === 'opened' && labels !== null ) ) {
+	if ( event.payload.action === 'synchronize' || event.payload.action === 'opened' ) {
 		let mappedLabels = labels.map( l => l.name );
 		labelsArray = labelsArray.concat( mappedLabels );
 	}
@@ -282,7 +282,6 @@ handler.on( 'pull_request', function( event ) {
 		const sha = event.payload.pull_request.head.sha;
 		let description;
 
-		// Canary Tests
 		if ( action !== 'labeled' ) {
 			// Canary Tests
 			description = 'The e2e canary tests are running against your PR';
@@ -300,6 +299,14 @@ handler.on( 'pull_request', function( event ) {
 			description = 'The e2e full WooCommerce suite tests are running against your PR';
 			log.info( 'Executing CALYPSO e2e full WooCommerce suite tests for branch: \'' + branchName + '\'' );
 			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-full-woocommerce', '-W', description, sha, false, e2eTestsMainProject );
+		}
+
+		if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
+			// Jetpack full suite
+			description = 'The e2e full Jetpack suite tests are running against your PR';
+			const envVars = {JETPACKHOST: 'PRESSABLEBLEEDINGEDGE'};
+			log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
+			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, e2eTestsMainProject, null, envVars );
 		}
 
 		if ( labelsArray.includes( calypsoFullSuiteSecureAuthTriggerLabel ) ) {

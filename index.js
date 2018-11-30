@@ -25,6 +25,7 @@ const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }
 const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject }/statuses/`;
 const gitHubCalypsoIssuesURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
+const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
 const wpCalypsoABTestsFile = 'client/lib/abtest/active-tests.js';
 
 const gitHubWebHookPath = '/ghwebhook';
@@ -111,19 +112,21 @@ handler.on( 'error', function( err ) {
 	log.error( 'Error: %s', err.message );
 } );
 
-function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null ) {
+function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
+	const branchSha = calypsoSha === null ? sha : calypsoSha;
 	const buildParameters = {
 		build_parameters: {
 			LIVEBRANCHES: liveBranches,
 			BRANCHNAME: branchName,
 			E2E_BRANCH: e2eBranchName,
-			RUN_ARGS: branchArg + ' ' + sha,
+			RUN_ARGS: branchArg + ' ' + branchSha,
 			sha: sha,
 			pullRequestNum: pullRequestNum,
 			calypsoProject: calypsoProjectSpecified,
 			jetpackProject: jetpackProjectSpecified,
 			prContext: prContext,
-			testFlag: testFlag
+			testFlag: testFlag,
+			calypsoSha: branchSha
 		}
 	};
 
@@ -278,43 +281,62 @@ handler.on( 'pull_request', function( event ) {
 		} );
 	} else if ( ( action === 'opened' || action === 'synchronize' || action === 'labeled' ) && repositoryName === e2eTestsMainProject ) {
 		//Run all e2e tests on wp-e2e-tests PRs
-		const branchName = event.payload.pull_request.head.ref;
+		let branchName = null;
+		let branchArg = null;
+		let jetpackBranchArg = null;
+		let calypsoSha = null;
+		let liveBranches = 'false';
+		const e2eBranchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
 		let description;
 
-		if ( action !== 'labeled' ) {
-			// Canary Tests
-			description = 'The e2e canary tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e canary tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, true, e2eTestsMainProject );
-			// IE11 Canary Tests
-			description = 'The IE11 e2e canary tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, true, e2eTestsMainProject );
-			// Safari v10 Canary Tests
-			description = 'The Safari v10 e2e canary tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, e2eTestsMainProject );
-			// WooCommerce full suite
-			description = 'The e2e full WooCommerce suite tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e full WooCommerce suite tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-full-woocommerce', '-W', description, sha, false, e2eTestsMainProject );
-		}
+		// Check if there's a matching branch in the main e2e test repository
+		request.get( {
+			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
+			url: gitHubCalypsoBranchURL + e2eBranchName,
+		}, function( err, response, body ) {
+			if ( response.statusCode === 200 ) {
+				branchName = e2eBranchName;
+				branchArg = '-S';
+				jetpackBranchArg = '-B';
+				liveBranches = 'true';
+				calypsoSha = JSON.parse( body ).commit.sha;
+			}
 
-		if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
-			// Jetpack full suite
-			description = 'The e2e full Jetpack suite tests are running against your PR';
-			const envVars = {JETPACKHOST: 'PRESSABLEBLEEDINGEDGE'};
-			log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, e2eTestsMainProject, null, envVars );
-		}
+			if ( action !== 'labeled' ) {
+				// Canary Tests
+				description = 'The e2e canary tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e canary tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
+				// IE11 Canary Tests
+				description = 'The IE11 e2e canary tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
+				// Safari v10 Canary Tests
+				description = 'The Safari v10 e2e canary tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
+				// WooCommerce full suite
+				description = 'The e2e full WooCommerce suite tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e full WooCommerce suite tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-woocommerce', '-W', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
+			}
 
-		if ( labelsArray.includes( calypsoFullSuiteSecureAuthTriggerLabel ) ) {
-			// Secure Auth full suite
-			description = 'The e2e full Secure Auth suite tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e full Secure Auth suite tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'false', null, null, branchName, pullRequestNum, 'ci/wp-e2e-tests-full-secure-auth', '-F -s desktop, mobile', description, sha, false, e2eTestsMainProject, null );
-		}
+			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
+				// Jetpack full suite
+				description = 'The e2e full Jetpack suite tests are running against your PR';
+				const envVars = {JETPACKHOST: 'PRESSABLEBLEEDINGEDGE'};
+				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, jetpackBranchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, e2eTestsMainProject, null, envVars, calypsoSha );
+			}
+
+			if ( labelsArray.includes( calypsoFullSuiteSecureAuthTriggerLabel ) ) {
+				// Secure Auth full suite
+				description = 'The e2e full Secure Auth suite tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e full Secure Auth suite tests for branch: \'' + e2eBranchName + '\'' );
+				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-secure-auth', '-F -s desktop, mobile', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
+			}
+		} );
 	} else if ( repositoryName === calypsoProject && ( action === 'synchronize' || action === 'opened' ) ) { // Comment about A/B tests for Calypso
 		const comment = `It looks like you're updating \`client/lib/abtest/active-tests.js\`. Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](https://github.com/${ calypsoProject }/tree/master/client/lib/abtest#updating-our-end-to-end-tests-to-avoid-inconsistencies-with-ab-tests). 🙏`;
 		request.get( {

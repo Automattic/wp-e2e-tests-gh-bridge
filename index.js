@@ -325,7 +325,7 @@ handler.on( 'pull_request', function( event ) {
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
 				// Jetpack full suite
 				description = 'The e2e full Jetpack suite tests are running against your PR';
-				const envVars = {JETPACKHOST: 'PRESSABLEBLEEDINGEDGE'};
+				const envVars = {JETPACKHOST: 'PRESSABLE'};
 				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + e2eBranchName + '\'' );
 				executeCircleCIBuild( liveBranches, jetpackBranchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, e2eTestsMainProject, null, envVars, calypsoSha );
 			}

@@ -66,6 +66,7 @@ http.createServer( function( req, res ) {
 					log.info( 'Unknown project called from CircleCI' );
 				}
 				if ( statusURL && payload && payload.build_parameters && payload.build_parameters.sha ) {
+					log.info( `CircleCI build ${payload.build_parameters.build_num} returned status ${payload.outcome} on branch ${payload.build_parameters.branch} for ${payload.build_parameters.prContext}` );
 					let status, desc;
 					if ( payload.outcome === 'success' ) {
 						status = 'success';
@@ -90,9 +91,9 @@ http.createServer( function( req, res ) {
 						body: JSON.stringify( gitHubStatus )
 					}, function( error ) {
 						if ( error ) {
-							log.error( `ERROR: ${error}` );
+							log.error( `ERROR: Error updating GitHub status for CircleCI ${payload.build_parameters.build_num} on branch ${payload.build_parameters.branch} for ${payload.build_parameters.prContext}: ${error}` );
 						}
-						log.debug( 'GitHub status updated' );
+						log.info( `GitHub status updated for CircleCI ${payload.build_parameters.build_num} on branch ${payload.build_parameters.branch} for ${payload.build_parameters.prContext}` );
 					} );
 				}
 			} catch ( e ) {
@@ -114,10 +115,11 @@ handler.on( 'error', function( err ) {
 
 function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
 	const branchSha = calypsoSha === null ? sha : calypsoSha;
+	const runBranch = branchName === null ? e2eBranchName : branchName;
 	const buildParameters = {
 		build_parameters: {
 			LIVEBRANCHES: liveBranches,
-			BRANCHNAME: branchName,
+			BRANCHNAME: runBranch,
 			E2E_BRANCH: e2eBranchName,
 			RUN_ARGS: branchArg + ' ' + branchSha,
 			sha: sha,
@@ -144,7 +146,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	}, function( error, response ) {
 		if ( response.statusCode === 201 ) {
 			let statusURL;
-			log.debug( 'Tests have been kicked off - updating PR status now' );
+			log.info( `Tests have been kicked off on branch ${runBranch} for ${prContext} - updating PR status now` );
 			// Post status to Github
 			const gitHubStatus = {
 				state: 'pending',
@@ -168,7 +170,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 				if ( responseError ) {
 					log.error( 'ERROR: ' + responseError );
 				}
-				log.debug( 'GitHub status updated' );
+				log.info( `GitHub status updated on branch ${runBranch} for ${prContext}` );
 			} );
 		} else {
 			// Something went wrong - TODO: post message to the Pull Request about

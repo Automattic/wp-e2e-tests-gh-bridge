@@ -39,6 +39,7 @@ http.createServer( function( req, res ) {
 	const fullUrl = req.url;
 	const path = fullUrl.split( '?' )[0];
 	if ( path === gitHubWebHookPath ) {
+		log.info( 'mykey ' + process.env.BRIDGE_SECRET );
 		handler( req, res, function( err ) {
 			res.statusCode = 404;
 			res.end( 'invalid location' + err );

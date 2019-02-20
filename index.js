@@ -291,13 +291,6 @@ handler.on( 'pull_request', function( event ) {
 				calypsoSha = JSON.parse( body ).commit.sha;
 			}
 
-			if ( action !== 'labeled' ) {
-				// WooCommerce full suite
-				description = 'The e2e full WooCommerce suite tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WooCommerce suite tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-woocommerce', '-W', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
-			}
-
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
 				// Jetpack full suite
 				description = 'The e2e full Jetpack suite tests are running against your PR';

@@ -234,25 +234,10 @@ handler.on( 'pull_request', function( event ) {
 				e2eBranchName = branchName;
 			}
 
-			if ( labelsArray.includes( calypsoCanaryTriggerLabel ) ) {
-				// Canary Tests
-				description = 'The e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, true, calypsoProject );
-				// IE11 Canary Tests
-				description = 'The IE11 e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, true, calypsoProject );
-				// Safari v10 Canary Tests
-				description = 'The Safari v10 e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, calypsoProject );
-			}
-			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
-				description = 'The e2e full WPCOM suite tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-p -g', description, sha, false, calypsoProject );
-			}
+			description = 'The e2e full WPCOM suite tests are running against your PR';
+			log.info( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
+			executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-p -g', description, sha, false, calypsoProject );
+
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
 				description = 'The e2e full Jetpack suite tests are running against your PR';
 				const envVars = { JETPACKHOST: 'PRESSABLEBLEEDINGEDGE' };
@@ -303,25 +288,6 @@ handler.on( 'pull_request', function( event ) {
 				jetpackBranchArg = '-B';
 				liveBranches = 'true';
 				calypsoSha = JSON.parse( body ).commit.sha;
-			}
-
-			if ( action !== 'labeled' ) {
-				// Canary Tests
-				description = 'The e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary', '-C', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
-				// IE11 Canary Tests
-				description = 'The IE11 e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary IE11 tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-ie11', '-z', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
-				// Safari v10 Canary Tests
-				description = 'The Safari v10 e2e canary tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e canary Safari v10 tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-canary-safari10', '-y', description, sha, true, e2eTestsMainProject, null, null, calypsoSha );
-				// WooCommerce full suite
-				description = 'The e2e full WooCommerce suite tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WooCommerce suite tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-woocommerce', '-W', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
 			}
 
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {

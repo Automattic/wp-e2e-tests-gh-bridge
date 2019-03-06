@@ -5,7 +5,7 @@ const { logger } = require( '@automattic/vip-go' );
 
 const calypsoProject = process.env.CALYPSO_PROJECT || 'Automattic/wp-calypso';
 const jetpackProject = process.env.JETPACK_PROJECT || 'Automattic/jetpack';
-const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-e2e-tests';
+const e2eTestsMainProject = process.env.E2E_MAIN_PROJECT || 'Automattic/wp-calypso';
 const e2eFullTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-tests-for-branches';
 const e2eCanaryTestsWrapperProject = process.env.E2E_WRAPPER_PROJECT || 'Automattic/wp-e2e-canary-for-branches';
 const e2eFullTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';

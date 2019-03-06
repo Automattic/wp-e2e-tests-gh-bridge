@@ -234,9 +234,11 @@ handler.on( 'pull_request', function( event ) {
 				e2eBranchName = branchName;
 			}
 
-			description = 'The e2e full WPCOM suite tests are running against your PR';
-			log.info( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
-			executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-p -g', description, sha, false, calypsoProject );
+			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
+				description = 'The e2e full WPCOM suite tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-p -g', description, sha, false, calypsoProject );
+			}
 
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
 				description = 'The e2e full Jetpack suite tests are running against your PR';

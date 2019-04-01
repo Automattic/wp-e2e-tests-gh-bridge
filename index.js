@@ -23,10 +23,8 @@ const triggerCanaryBuildURL = `https://circleci.com/api/v1.1/project/github/${ e
 const gitHubCalypsoStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
 const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }/statuses/`;
 const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject }/statuses/`;
-const gitHubCalypsoIssuesURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
-const wpCalypsoABTestsFile = 'client/lib/abtest/active-tests.js';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -235,9 +233,13 @@ handler.on( 'pull_request', function( event ) {
 			}
 
 			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
-				description = 'The e2e full WPCOM suite tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full', '-p -g', description, sha, false, calypsoProject );
+				description = 'The e2e full WPCOM suite desktop  tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject );
+
+				description = 'The e2e full WPCOM suite mobile tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', '-s mobile -g', description, sha, false, calypsoProject );
 			}
 
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
@@ -305,52 +307,6 @@ handler.on( 'pull_request', function( event ) {
 				description = 'The e2e full Secure Auth suite tests are running against your PR';
 				log.info( 'Executing CALYPSO e2e full Secure Auth suite tests for branch: \'' + e2eBranchName + '\'' );
 				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-secure-auth', '-F -s desktop, mobile', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
-			}
-		} );
-	} else if ( repositoryName === calypsoProject && ( action === 'synchronize' || action === 'opened' ) ) { // Comment about A/B tests for Calypso
-		const comment = `It looks like you're updating \`client/lib/abtest/active-tests.js\`. Can you please ensure our [automated e2e tests](https://github.com/${ e2eTestsMainProject }) know about this change? Instructions on how to do this are available [here](https://github.com/${ calypsoProject }/tree/master/client/lib/abtest#updating-our-end-to-end-tests-to-avoid-inconsistencies-with-ab-tests). 🙏`;
-		request.get( {
-			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-			url: prURL + '/files'
-		}, function( error, body ) {
-			if ( error || body.statusCode !== 200 ) {
-				log.error( 'Error trying to retrieve files for PR: ' + JSON.stringify( error ) );
-				return false;
-			}
-			const files = JSON.parse( body.body );
-			for ( let file of files ) {
-				if ( file.filename === wpCalypsoABTestsFile ) {
-					log.info( 'Found a change to the AB tests file - check if we have already commented on this PR' );
-
-					request.get( {
-						headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-						url: gitHubCalypsoIssuesURL + pullRequestNum + '/comments'
-					}, function( err, body ) {
-						if ( err || body.statusCode !== 200 ) {
-							log.error( 'Error trying to retrieve comments for PR: ' + JSON.stringify( error ) );
-							return false;
-						}
-						const comments = JSON.parse( body.body );
-						for ( let existingComment of comments ) {
-							if ( existingComment.body === comment ) {
-								log.info( 'Found existing comment about A/B tests - exiting' );
-								return false;
-							}
-						}
-						request.post( {
-							headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-							url: gitHubCalypsoIssuesURL + pullRequestNum + '/comments',
-							body: JSON.stringify( { body: comment } )
-						}, function( responseError ) {
-							if ( responseError ) {
-								log.error( 'ERROR: ' + responseError );
-							} else {
-								log.info( 'GitHub Pull Request changing AB test files commented on' );
-							}
-						} );
-					} );
-					break;
-				}
 			}
 		} );
 	}

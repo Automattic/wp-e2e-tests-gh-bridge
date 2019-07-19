@@ -13,6 +13,7 @@ const e2eCanaryTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
 const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing';
+const calypsoFullSuiteHorizonTriggerLabel = process.env.CALYPSO_FULL_SUITE_HORIZON_TRIGGER_LABEL || '[Status] Needs e2e Testing horizon';
 const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
 
@@ -25,6 +26,7 @@ const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }
 const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject }/statuses/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
+const horizonBaseURL = 'https://horizon.wordpress.com';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -217,7 +219,8 @@ handler.on( 'pull_request', function( event ) {
 	}
 
 	// Calypso test execution on label
-	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === calypsoProject && ( labelsArray.includes( calypsoCanaryTriggerLabel ) || labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) ) {
+	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === calypsoProject && ( labelsArray.includes( calypsoCanaryTriggerLabel ) ||
+		labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) || labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ) ) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
 		let e2eBranchName, description;
@@ -247,6 +250,17 @@ handler.on( 'pull_request', function( event ) {
 				const envVars = { JETPACKHOST: 'PRESSABLEBLEEDINGEDGE' };
 				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, calypsoProject, null, envVars );
+			}
+
+			if ( labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ) {
+				const envVars = { SKIP_DOMAIN_TESTS: true, HORIZON_TESTS: true };
+				description = 'The e2e full WPCOM suite horizon desktop tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e horizon full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-horizon-full-desktop', `-s desktop -g -u ${horizonBaseURL}`, description, sha, false, calypsoProject, null, envVars );
+
+				description = 'The e2e full WPCOM suite horizon mobile tests are running against your PR';
+				log.info( 'Executing CALYPSO e2e horizon full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-horizon-full-mobile', `-s mobile -g -u ${horizonBaseURL}`, description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

@@ -19,7 +19,7 @@ const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SE
 
 const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
 
-const triggerFullBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eFullTestsWrapperProject }/tree/${ e2eFullTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
+const triggerFullBuildURL = `https://circleci.com/api/v2/project/github/${ e2eFullTestsWrapperProject }/pipeline?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const triggerCanaryBuildURL = `https://circleci.com/api/v1.1/project/github/${ e2eCanaryTestsWrapperProject }/tree/${ e2eCanaryTestsWrapperBranch }?circle-token=${ process.env.CIRCLECI_SECRET}`;
 const gitHubCalypsoStatusURL = `https://api.github.com/repos/${ calypsoProject }/statuses/`;
 const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }/statuses/`;
@@ -117,13 +117,14 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	const branchSha = calypsoSha === null ? sha : calypsoSha;
 	const runBranch = branchName === null ? e2eBranchName : branchName;
 	const buildParameters = {
-		build_parameters: {
+		branch: e2eFullTestsWrapperBranch,
+		parameters: {
 			LIVEBRANCHES: liveBranches,
 			BRANCHNAME: runBranch,
 			E2E_BRANCH: e2eBranchName,
 			RUN_ARGS: branchArg + ' ' + branchSha,
 			sha: sha,
-			pullRequestNum: pullRequestNum,
+			pullRequestNum: pullRequestNum.toString(),
 			calypsoProject: calypsoProjectSpecified,
 			jetpackProject: jetpackProjectSpecified,
 			prContext: prContext,
@@ -133,7 +134,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	};
 
 	if ( envVars ) {
-		Object.assign( buildParameters.build_parameters, envVars )
+		Object.assign( buildParameters.parameters, envVars )
 	}
 
 	const triggerBuildURL = isCanary ? triggerCanaryBuildURL : triggerFullBuildURL;
@@ -142,7 +143,9 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	request.post( {
 		headers: {'content-type': 'application/json', accept: 'application/json'},
 		url: triggerBuildURL,
-		body: JSON.stringify( buildParameters )
+		body: JSON.stringify( buildParameters, (key, value) => {
+			if (value !== null) return value
+		} )
 	}, function( error, response ) {
 		if ( response.statusCode === 201 ) {
 			let statusURL;

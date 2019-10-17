@@ -27,6 +27,8 @@ const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject 
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
 const horizonBaseURL = 'https://horizon.wordpress.com';
+const circleCIGetWorkflowURL = 'https://circleci.com/api/v2/pipeline/';
+const circleCIWorkflowURL = 'https://circleci.com/workflow-run/';
 
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
@@ -34,6 +36,12 @@ const healthCheckPath = '/cache-healthcheck';
 
 const handler = createHandler( { path: gitHubWebHookPath, secret: process.env.BRIDGE_SECRET } );
 const log = logger( 'wp-e2e-tests-gh-bridge:webhook' );
+
+function sleep( ms ){
+	return new Promise( resolve=>{
+		setTimeout( resolve,ms )
+	} )
+}
 
 http.createServer( function( req, res ) {
 	const fullUrl = req.url;
@@ -113,7 +121,7 @@ handler.on( 'error', function( err ) {
 	log.error( 'Error: %s', err.message );
 } );
 
-function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
+async function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
 	const branchSha = calypsoSha === null ? sha : calypsoSha;
 	const runBranch = branchName === null ? e2eBranchName : branchName;
 	const buildParameters = {
@@ -146,34 +154,52 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 		body: JSON.stringify( buildParameters, (key, value) => {
 			if (value !== null) return value
 		} )
-	}, function( error, response ) {
-		if ( response.statusCode === 201 ) {
+	}, async function ( error, response ) {
+		if ( response.statusCode === 202 ) {
 			let statusURL;
+			let workflowID;
+			let getWorkflowURL = circleCIGetWorkflowURL + JSON.parse( response.body ).id + `?circle-token=${ process.env.CIRCLECI_SECRET}`;
 			log.info( `Tests have been kicked off on branch ${runBranch} for ${prContext} - updating PR status now` );
-			// Post status to Github
-			const gitHubStatus = {
-				state: 'pending',
-				target_url: JSON.parse( response.body ).build_url,
-				context: prContext,
-				description: description
-			};
 
-			if ( calypsoProjectSpecified === calypsoProject ) {
-				statusURL = gitHubCalypsoStatusURL;
-			} else if ( jetpackProjectSpecified === jetpackProject ) {
-				statusURL = gitHubJetpackStatusURL;
-			} else if ( calypsoProjectSpecified === e2eTestsMainProject ) {
-				statusURL = gitHubE2EStatusURL;
-			}
-			request.post( {
-				headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-				url: statusURL + sha,
-				body: JSON.stringify( gitHubStatus )
-			}, function( responseError ) {
+			await sleep( 5000 );
+			request.get( {
+				headers: {'content-type': 'application/json', accept: 'application/json'},
+				url: getWorkflowURL,
+			}, function ( responseError, response ) {
 				if ( responseError ) {
+					log.error( 'Error when getting workflow ID' );
 					log.error( 'ERROR: ' + responseError );
 				}
-				log.info( `GitHub status updated on branch ${runBranch} for ${prContext}` );
+				workflowID = JSON.parse( response.body ).workflows[0].id;
+
+				// Post status to Github
+				const gitHubStatus = {
+					state: 'pending',
+					target_url: circleCIWorkflowURL + workflowID,
+					context: prContext,
+					description: description
+				};
+
+				if ( calypsoProjectSpecified === calypsoProject ) {
+					statusURL = gitHubCalypsoStatusURL;
+				} else if ( jetpackProjectSpecified === jetpackProject ) {
+					statusURL = gitHubJetpackStatusURL;
+				} else if ( calypsoProjectSpecified === e2eTestsMainProject ) {
+					statusURL = gitHubE2EStatusURL;
+				}
+				request.post( {
+					headers: {
+						Authorization: 'token ' + process.env.GITHUB_SECRET,
+						'User-Agent': 'wp-e2e-tests-gh-bridge'
+					},
+					url: statusURL + sha,
+					body: JSON.stringify( gitHubStatus )
+				}, function ( responseError ) {
+					if ( responseError ) {
+						log.error( 'ERROR: ' + responseError );
+					}
+					log.info( `GitHub status updated on branch ${runBranch} for ${prContext}` );
+				} );
 			} );
 		} else {
 			// Something went wrong - TODO: post message to the Pull Request about

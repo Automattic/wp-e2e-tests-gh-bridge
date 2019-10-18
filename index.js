@@ -121,7 +121,7 @@ handler.on( 'error', function( err ) {
 	log.error( 'Error: %s', err.message );
 } );
 
-async function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
+function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, prContext, testFlag, description, sha, isCanary, calypsoProjectSpecified, jetpackProjectSpecified, envVars = null, calypsoSha = null ) {
 	const branchSha = calypsoSha === null ? sha : calypsoSha;
 	const runBranch = branchName === null ? e2eBranchName : branchName;
 	const buildParameters = {

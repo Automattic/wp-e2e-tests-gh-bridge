@@ -275,7 +275,7 @@ handler.on( 'pull_request', function( event ) {
 				e2eBranchName = branchName;
 			}
 
-			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) ) {
+			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoCanaryTriggerLabel )) {
 				description = 'The e2e full WPCOM suite desktop  tests are running against your PR';
 				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject );

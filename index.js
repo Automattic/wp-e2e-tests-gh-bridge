@@ -155,7 +155,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 			if (value !== null) return value
 		} )
 	}, async function( error, response ) {
-		if ( response.statusCode === 202 ) {
+		if ( response.statusCode === 201 ) {
 			let statusURL;
 			let workflowID;
 			let getWorkflowURL = circleCIGetWorkflowURL + JSON.parse( response.body ).id + `?circle-token=${ process.env.CIRCLECI_SECRET}`;
@@ -263,6 +263,7 @@ handler.on( 'pull_request', function( event ) {
 		labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) || labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ) ) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
+		const user = event.payload.pull_request.user.login;
 		let e2eBranchName, description;
 
 		// Check if there's a matching branch in the main e2e test repository
@@ -275,14 +276,20 @@ handler.on( 'pull_request', function( event ) {
 				e2eBranchName = branchName;
 			}
 
-			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoCanaryTriggerLabel )) {
-				description = 'The e2e full WPCOM suite desktop  tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject );
+			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoCanaryTriggerLabel ) ) {
+				if ( user === 'renovate[bot]' ) {
+					description = 'The e2e full WPCOM suite of tests are running against your PR';
+					log.info( 'Executing CALYPSO e2e full WPCOM suite of tests for branch: \'' + branchName + '\'' );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-renovate', '-g -p', description, sha, false, calypsoProject );
+				} else {
+					description = 'The e2e full WPCOM suite desktop  tests are running against your PR';
+					log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject );
 
-				description = 'The e2e full WPCOM suite mobile tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', '-s mobile -g', description, sha, false, calypsoProject );
+					description = 'The e2e full WPCOM suite mobile tests are running against your PR';
+					log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', '-s mobile -g', description, sha, false, calypsoProject );
+				}
 			}
 
 			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {

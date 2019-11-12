@@ -277,18 +277,19 @@ handler.on( 'pull_request', function( event ) {
 			}
 
 			if ( labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoCanaryTriggerLabel ) ) {
+				const envVars = { FORCE_ALL: labelsArray.includes( calypsoFullSuiteTriggerLabel ) };
 				if ( user === 'renovate[bot]' ) {
 					description = 'The e2e full WPCOM suite of tests are running against your PR';
 					log.info( 'Executing CALYPSO e2e full WPCOM suite of tests for branch: \'' + branchName + '\'' );
-					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-renovate', '-g -p', description, sha, false, calypsoProject );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-renovate', '-g -p', description, sha, false, calypsoProject, null, envVars );
 				} else {
 					description = 'The e2e full WPCOM suite desktop  tests are running against your PR';
 					log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
-					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', '-s desktop -g', description, sha, false, calypsoProject, null, envVars );
 
 					description = 'The e2e full WPCOM suite mobile tests are running against your PR';
 					log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
-					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', '-s mobile -g', description, sha, false, calypsoProject );
+					executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
 				}
 			}
 

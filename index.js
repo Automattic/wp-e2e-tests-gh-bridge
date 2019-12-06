@@ -14,6 +14,7 @@ const e2eCanaryTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
 const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing';
 const calypsoFullSuiteHorizonTriggerLabel = process.env.CALYPSO_FULL_SUITE_HORIZON_TRIGGER_LABEL || '[Status] Needs e2e Testing horizon';
+const calypsoFullSuiteGutenbergLabel = process.env.CALYPSO_FULL_SUITE_GUTENBERG_TRIGGER_LABEL || '[Status] Needs e2e Testing Gutenberg Edge';
 const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
 
@@ -259,8 +260,15 @@ handler.on( 'pull_request', function( event ) {
 	}
 
 	// Calypso test execution on label
-	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === calypsoProject && ( labelsArray.includes( calypsoCanaryTriggerLabel ) ||
-		labelsArray.includes( calypsoFullSuiteTriggerLabel ) || labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) || labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ) ) {
+
+	if ( ( action === 'labeled' || action === 'synchronize' ) &&
+		repositoryName === calypsoProject && (
+			labelsArray.includes( calypsoCanaryTriggerLabel ) ||
+			labelsArray.includes( calypsoFullSuiteTriggerLabel ) ||
+			labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ||
+			labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ||
+			labelsArray.includes( calypsoFullSuiteGutenbergLabel )
+		) ) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
 		const user = event.payload.pull_request.user.login;
@@ -309,6 +317,17 @@ handler.on( 'pull_request', function( event ) {
 				description = 'The e2e full WPCOM suite horizon mobile tests are running against your PR';
 				log.info( 'Executing CALYPSO e2e horizon full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-horizon-full-mobile', `-s mobile -g -u ${horizonBaseURL}`, description, sha, false, calypsoProject, null, envVars );
+			}
+
+			if ( labelsArray.includes( calypsoFullSuiteGutenbergLabel ) ) {
+				const envVars = { SKIP_DOMAIN_TESTS: true, GUTENBERG_EDGE: true };
+				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for with gutenberg edge branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', `-s desktop -g`, description, sha, false, calypsoProject, null, envVars );
+
+				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests with gutenberg edge for branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', `-s mobile -g`, description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

@@ -323,11 +323,11 @@ handler.on( 'pull_request', function( event ) {
 				const envVars = { SKIP_DOMAIN_TESTS: true, GUTENBERG_EDGE: true };
 				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
 				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for with gutenberg edge branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop', `-s desktop -g`, description, sha, false, calypsoProject, null, envVars );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop-edge', '-s desktop -g', description, sha, false, calypsoProject, null, envVars );
 
 				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
 				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests with gutenberg edge for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile', `-s mobile -g`, description, sha, false, calypsoProject, null, envVars );
+				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile-edge', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

@@ -159,7 +159,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 		if ( response.statusCode === 201 ) {
 			let statusURL;
 			let workflowID;
-			let getWorkflowURL = circleCIGetWorkflowURL + JSON.parse( response.body ).id + `?circle-token=${ process.env.CIRCLECI_SECRET}`;
+			let getWorkflowURL = circleCIGetWorkflowURL + JSON.parse( response.body ).id + `/workflow?circle-token=${ process.env.CIRCLECI_SECRET}`;
 			let workflowFound = false;
 			let i = 0;
 			log.info( `Tests have been kicked off on branch ${runBranch} for ${prContext} - updating PR status now` );
@@ -176,7 +176,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 						log.error( 'ERROR: ' + responseError );
 					}
 					//Make sure a workflow id was returned
-					let workflows = JSON.parse( responseCI.body ).workflows;
+					let workflows = JSON.parse( responseCI.body ).items;
 					if ( workflows.length === 0 ) {
 						return;
 					}

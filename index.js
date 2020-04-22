@@ -156,7 +156,7 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 			if (value !== null) return value
 		} )
 	}, async function( error, response ) {
-		if ( response.statusCode === 201 ) {
+		if ( response.statusCode === 200 ) {
 			let statusURL;
 			let workflowID;
 			let getWorkflowURL = circleCIGetWorkflowURL + JSON.parse( response.body ).id + `/workflow?circle-token=${ process.env.CIRCLECI_SECRET}`;

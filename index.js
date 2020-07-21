@@ -32,7 +32,6 @@ const gitHubCalypsoIssueURL = `https://api.github.com/repos/${ calypsoProject }/
 const horizonBaseURL = 'https://horizon.wordpress.com';
 const circleCIGetWorkflowURL = 'https://circleci.com/api/v2/pipeline/';
 const circleCIWorkflowURL = 'https://circleci.com/workflow-run/';
-
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
 const healthCheckPath = '/cache-healthcheck';
@@ -394,6 +393,16 @@ handler.on( 'pull_request', function( event ) {
 		} );
 	} else if ( event.payload.pull_request.state === 'open' && !labelsArray.includes( calypsoCanaryTriggerLabel ) &&
 			!labelsArray.includes( calypsoReadyToMergeLabel ) && action !== 'unlabeled' ) {
+		checkIfLabelIsNeededAndAdd( event.payload.pull_request );
+	}
+} );
+
+handler.on( 'pull_request_review', function( event ) {
+	const labels = event.payload.pull_request.labels;
+	let labelsArray = labels.map( l => l.name );
+
+	if ( event.payload.pull_request.state === 'open' && !labelsArray.includes( calypsoCanaryTriggerLabel ) &&
+		!labelsArray.includes( calypsoReadyToMergeLabel ) ) {
 		checkIfLabelIsNeededAndAdd( event.payload.pull_request );
 	}
 } );

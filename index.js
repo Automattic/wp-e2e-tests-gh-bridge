@@ -17,6 +17,7 @@ const calypsoFullSuiteHorizonTriggerLabel = process.env.CALYPSO_FULL_SUITE_HORIZ
 const calypsoFullSuiteGutenbergLabel = process.env.CALYPSO_FULL_SUITE_GUTENBERG_TRIGGER_LABEL || '[Status] Needs e2e Testing Gutenberg Edge';
 const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
+const calypsoReadyToMergeLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Ready to Merge';
 
 const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
 
@@ -27,10 +28,10 @@ const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }
 const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject }/statuses/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
+const gitHubCalypsoIssueURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const horizonBaseURL = 'https://horizon.wordpress.com';
 const circleCIGetWorkflowURL = 'https://circleci.com/api/v2/pipeline/';
 const circleCIWorkflowURL = 'https://circleci.com/workflow-run/';
-
 const gitHubWebHookPath = '/ghwebhook';
 const circleCIWebHookPath = '/circleciwebhook';
 const healthCheckPath = '/cache-healthcheck';
@@ -390,5 +391,54 @@ handler.on( 'pull_request', function( event ) {
 				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-secure-auth', '-F -s desktop, mobile', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
 			}
 		} );
+	} else if ( event.payload.pull_request.state === 'open' && !labelsArray.includes( calypsoCanaryTriggerLabel ) &&
+			!labelsArray.includes( calypsoReadyToMergeLabel ) && action !== 'unlabeled' ) {
+		checkIfLabelIsNeededAndAdd( event.payload.pull_request );
 	}
 } );
+
+handler.on( 'pull_request_review', function( event ) {
+	const labels = event.payload.pull_request.labels;
+	let labelsArray = labels.map( l => l.name );
+
+	if ( event.payload.pull_request.state === 'open' && !labelsArray.includes( calypsoCanaryTriggerLabel ) &&
+		!labelsArray.includes( calypsoReadyToMergeLabel ) ) {
+		checkIfLabelIsNeededAndAdd( event.payload.pull_request );
+	}
+} );
+
+function checkIfLabelIsNeededAndAdd( pullRequest ) {
+	if ( pullRequest.requested_reviewers.length > 0 || pullRequest.requested_teams.length > 0 ) {
+		return addNeedsReviewLabel( pullRequest.number );
+	}
+
+	request.get( {
+		headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge', Accept: 'application/vnd.github.starfox-preview+json' },
+		url: gitHubCalypsoIssueURL + pullRequest.number + '/events',
+	}, function( err, response, body ) {
+		body = JSON.parse( body );
+
+		if ( response.statusCode === 200 ) {
+			for ( let i = 0; i < body.length; i++ ) {
+				if ( body[i].event === 'moved_columns_in_project' && ( body[i].project_card.column_name.toString().toLowerCase().includes( 'needs review' ) || body[i].project_card.column_name.toString().toLowerCase().includes( 'ready for review' ) ) ) {
+					return addNeedsReviewLabel( pullRequest.number );
+				}
+			}
+		}
+	} );
+}
+
+function addNeedsReviewLabel( prNumber ) {
+	const gitHubLabel = {
+		labels: [calypsoCanaryTriggerLabel]
+	};
+	log.info( 'Adding Needs Review label to PR #' + prNumber );
+	request.post( {
+		headers: {
+			Authorization: 'token ' + process.env.GITHUB_SECRET,
+			'User-Agent': 'wp-e2e-tests-gh-bridge'
+		},
+		url: gitHubCalypsoIssueURL + prNumber + '/labels',
+		body: JSON.stringify( gitHubLabel )
+	} );
+}

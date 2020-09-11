@@ -15,6 +15,7 @@ const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status]
 const calypsoFullSuiteTriggerLabel = process.env.CALYPSO_FULL_SUITE_TRIGGER_LABEL || '[Status] Needs e2e Testing';
 const calypsoFullSuiteHorizonTriggerLabel = process.env.CALYPSO_FULL_SUITE_HORIZON_TRIGGER_LABEL || '[Status] Needs e2e Testing horizon';
 const calypsoFullSuiteGutenbergLabel = process.env.CALYPSO_FULL_SUITE_GUTENBERG_TRIGGER_LABEL || '[Status] Needs e2e Testing Gutenberg Edge';
+const calypsoFullSuiteCoBlocksLabel = process.env.CALYPSO_FULL_SUITE_COBLOCKS_TRIGGER_LABEL || '[Status] Needs e2e Testing CoBlocks Edge';
 const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
 const calypsoReadyToMergeLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Ready to Merge';
@@ -268,7 +269,8 @@ handler.on( 'pull_request', function( event ) {
 			labelsArray.includes( calypsoFullSuiteTriggerLabel ) ||
 			labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ||
 			labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ||
-			labelsArray.includes( calypsoFullSuiteGutenbergLabel )
+			labelsArray.includes( calypsoFullSuiteGutenbergLabel ) ||
+			labelsArray.includes( calypsoFullSuiteCoBlocksLabel )
 		) ) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
@@ -329,6 +331,17 @@ handler.on( 'pull_request', function( event ) {
 				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
 				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests with gutenberg edge for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile-edge', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
+			}
+
+			if ( labelsArray.includes( calypsoFullSuiteCoBlocksLabel ) ) {
+				const envVars = { SKIP_DOMAIN_TESTS: true, COBLOCKS_EDGE: true };
+				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of CoBlocks';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests against CoBlocks edge branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-coblocks-edge-desktop', '-s desktop -g', description, sha, false, calypsoProject, null, envVars );
+
+				description = 'The e2e full WPCOM suite mobile tests are running against your PR with the latest snapshot of CoBlocks';
+				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests against CoBlocks edge branch: \'' + branchName + '\'' );
+				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-coblocks-edge-mobile', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

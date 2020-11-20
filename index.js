@@ -282,7 +282,7 @@ handler.on( 'pull_request', function( event ) {
 			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
 			url: gitHubMainE2EBranchURL + branchName,
 		}, function( err, response ) {
-			e2eBranchName = 'master';
+			e2eBranchName = 'trunk';
 			if ( response.statusCode === 200 ) {
 				e2eBranchName = branchName;
 			}
@@ -357,7 +357,7 @@ handler.on( 'pull_request', function( event ) {
 			if ( response.statusCode === 200 ) {
 				e2eBranchName = branchName;
 			} else {
-				e2eBranchName = 'master';
+				e2eBranchName = 'trunk';
 			}
 			if ( labelsArray.includes( jetpackCanaryTriggerLabel ) ) {
 				description = 'The e2e canary tests are running against your PR';

@@ -264,7 +264,6 @@ handler.on( 'pull_request', function( event ) {
 
 	if ( ( action === 'labeled' || action === 'synchronize' ) &&
 		repositoryName === calypsoProject && (
-			labelsArray.includes( calypsoCanaryTriggerLabel ) ||
 			labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ||
 			labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ||
 			labelsArray.includes( calypsoFullSuiteGutenbergLabel ) ||

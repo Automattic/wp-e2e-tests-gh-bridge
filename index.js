@@ -12,9 +12,6 @@ const e2eFullTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 const e2eCanaryTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
-const calypsoFullSuiteHorizonTriggerLabel = process.env.CALYPSO_FULL_SUITE_HORIZON_TRIGGER_LABEL || '[Status] Needs e2e Testing horizon';
-const calypsoFullSuiteGutenbergLabel = process.env.CALYPSO_FULL_SUITE_GUTENBERG_TRIGGER_LABEL || '[Status] Needs e2e Testing Gutenberg Edge';
-const calypsoFullSuiteCoBlocksLabel = process.env.CALYPSO_FULL_SUITE_COBLOCKS_TRIGGER_LABEL || '[Status] Needs e2e Testing CoBlocks Edge';
 const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
 const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
 const calypsoReadyToMergeLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Ready to Merge';
@@ -29,7 +26,6 @@ const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject 
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
 const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
 const gitHubCalypsoIssueURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
-const horizonBaseURL = 'https://horizon.wordpress.com';
 const circleCIGetWorkflowURL = 'https://circleci.com/api/v2/pipeline/';
 const circleCIWorkflowURL = 'https://circleci.com/workflow-run/';
 const gitHubWebHookPath = '/ghwebhook';
@@ -153,8 +149,8 @@ function executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchNam
 	request.post( {
 		headers: {'content-type': 'application/json', accept: 'application/json'},
 		url: triggerBuildURL,
-		body: JSON.stringify( buildParameters, (key, value) => {
-			if (value !== null) return value
+		body: JSON.stringify( buildParameters, ( key, value ) => {
+			if ( value !== null ) return value
 		} )
 	}, async function( error, response ) {
 		if ( response.statusCode === 201 ) {
@@ -228,7 +224,6 @@ handler.on( 'pull_request', function( event ) {
 	const pullRequestHeadLabel = event.payload.pull_request.head.label;
 	const repositoryName = event.payload.repository.full_name;
 	const action = event.payload.action;
-	const prURL = event.payload.pull_request.url;
 	const label = event.payload.label ? event.payload.label.name : null;
 	const labels = event.payload.pull_request.labels;
 	let labelsArray = [];
@@ -263,15 +258,11 @@ handler.on( 'pull_request', function( event ) {
 	// Calypso test execution on label
 
 	if ( ( action === 'labeled' || action === 'synchronize' ) &&
-		repositoryName === calypsoProject && (
-			labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ||
-			labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ||
-			labelsArray.includes( calypsoFullSuiteGutenbergLabel ) ||
-			labelsArray.includes( calypsoFullSuiteCoBlocksLabel )
-		) ) {
+		repositoryName === calypsoProject &&
+		labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel )
+	) {
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
-		const user = event.payload.pull_request.user.login;
 		let e2eBranchName, description;
 
 		// Check if there's a matching branch in the main e2e test repository
@@ -289,39 +280,6 @@ handler.on( 'pull_request', function( event ) {
 				const envVars = { JETPACKHOST: 'PRESSABLEBLEEDINGEDGE' };
 				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, calypsoProject, null, envVars );
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteHorizonTriggerLabel ) ) {
-				const envVars = { SKIP_DOMAIN_TESTS: true, HORIZON_TESTS: true };
-				description = 'The e2e full WPCOM suite horizon desktop tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e horizon full WPCOM suite desktop tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-horizon-full-desktop', `-s desktop -g -u ${horizonBaseURL}`, description, sha, false, calypsoProject, null, envVars );
-
-				description = 'The e2e full WPCOM suite horizon mobile tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e horizon full WPCOM suite mobile tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'false', '', '', e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-horizon-full-mobile', `-s mobile -g -u ${horizonBaseURL}`, description, sha, false, calypsoProject, null, envVars );
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteGutenbergLabel ) ) {
-				const envVars = { SKIP_DOMAIN_TESTS: true, GUTENBERG_EDGE: true };
-				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests for with gutenberg edge branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-desktop-edge', '-s desktop -g', description, sha, false, calypsoProject, null, envVars );
-
-				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of Gutenberg';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests with gutenberg edge for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-mobile-edge', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteCoBlocksLabel ) ) {
-				const envVars = { SKIP_DOMAIN_TESTS: true, COBLOCKS_EDGE: true };
-				description = 'The e2e full WPCOM suite desktop tests are running against your PR with the latest snapshot of CoBlocks';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite desktop tests against CoBlocks edge branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-coblocks-edge-desktop', '-s desktop -g', description, sha, false, calypsoProject, null, envVars );
-
-				description = 'The e2e full WPCOM suite mobile tests are running against your PR with the latest snapshot of CoBlocks';
-				log.info( 'Executing CALYPSO e2e full WPCOM suite mobile tests against CoBlocks edge branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-coblocks-edge-mobile', '-s mobile -g', description, sha, false, calypsoProject, null, envVars );
 			}
 		} );
 	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label

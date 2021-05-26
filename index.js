@@ -12,8 +12,6 @@ const e2eFullTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 const e2eCanaryTestsWrapperBranch = process.env.E2E_WRAPPER_BRANCH || 'master';
 
 const calypsoCanaryTriggerLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Needs Review';
-const calypsoFullSuiteJetpackTriggerLabel = process.env.CALYPSO_FULL_SUITE_JETPACK_TRIGGER_LABEL || '[Status] Needs Jetpack e2e Testing';
-const calypsoFullSuiteSecureAuthTriggerLabel = process.env.CALYPSO_FULL_SUITE_SECURE_AUTH_TRIGGER_LABEL || '[Status] Needs Secure Auth e2e Testing';
 const calypsoReadyToMergeLabel = process.env.CALYPSO_TRIGGER_LABEL || '[Status] Ready to Merge';
 
 const jetpackCanaryTriggerLabel = process.env.JETPACK_CANARY_TRIGGER_LABEL || '[Status] Needs e2e Canary Testing';
@@ -24,7 +22,6 @@ const gitHubCalypsoStatusURL = `https://api.github.com/repos/${ calypsoProject }
 const gitHubJetpackStatusURL = `https://api.github.com/repos/${ jetpackProject }/statuses/`;
 const gitHubE2EStatusURL = `https://api.github.com/repos/${ e2eTestsMainProject }/statuses/`;
 const gitHubMainE2EBranchURL = `https://api.github.com/repos/${ e2eTestsMainProject }/branches/`;
-const gitHubCalypsoBranchURL = `https://api.github.com/repos/${ calypsoProject }/branches/`;
 const gitHubCalypsoIssueURL = `https://api.github.com/repos/${ calypsoProject }/issues/`;
 const circleCIGetWorkflowURL = 'https://circleci.com/api/v2/pipeline/';
 const circleCIWorkflowURL = 'https://circleci.com/workflow-run/';
@@ -255,34 +252,7 @@ handler.on( 'pull_request', function( event ) {
 		labelsArray.push( label );
 	}
 
-	// Calypso test execution on label
-
-	if ( ( action === 'labeled' || action === 'synchronize' ) &&
-		repositoryName === calypsoProject &&
-		labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel )
-	) {
-		const branchName = event.payload.pull_request.head.ref;
-		const sha = event.payload.pull_request.head.sha;
-		let e2eBranchName, description;
-
-		// Check if there's a matching branch in the main e2e test repository
-		request.get( {
-			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-			url: gitHubMainE2EBranchURL + branchName,
-		}, function( err, response ) {
-			e2eBranchName = 'trunk';
-			if ( response.statusCode === 200 ) {
-				e2eBranchName = branchName;
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
-				description = 'The e2e full Jetpack suite tests are running against your PR';
-				const envVars = { JETPACKHOST: 'PRESSABLEBLEEDINGEDGE' };
-				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + branchName + '\'' );
-				executeCircleCIBuild( 'true', '-S', branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, calypsoProject, null, envVars );
-			}
-		} );
-	} else if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label
+	if ( ( action === 'labeled' || action === 'synchronize' ) && repositoryName === jetpackProject && labelsArray.includes( jetpackCanaryTriggerLabel ) ) { // Jetpack test execution on label
 		const branchName = event.payload.pull_request.head.ref;
 		const sha = event.payload.pull_request.head.sha;
 		let e2eBranchName, description;
@@ -301,45 +271,6 @@ handler.on( 'pull_request', function( event ) {
 				description = 'The e2e canary tests are running against your PR';
 				log.info( 'Executing JETPACK e2e canary tests for branch: \'' + branchName + '\'' );
 				executeCircleCIBuild( 'false', '-B', branchName, e2eBranchName, pullRequestNum, 'ci/jetpack-e2e-tests-canary', '-p -J', description, sha, true, null, jetpackProject );
-			}
-		} );
-	} else if ( ( action === 'opened' || action === 'synchronize' || action === 'labeled' ) && repositoryName === e2eTestsMainProject ) {
-		//Run all e2e tests on wp-e2e-tests PRs
-		let branchName = null;
-		let branchArg = null;
-		let jetpackBranchArg = null;
-		let calypsoSha = null;
-		let liveBranches = 'false';
-		const e2eBranchName = event.payload.pull_request.head.ref;
-		const sha = event.payload.pull_request.head.sha;
-		let description;
-
-		// Check if there's a matching branch in the main e2e test repository
-		request.get( {
-			headers: { Authorization: 'token ' + process.env.GITHUB_SECRET, 'User-Agent': 'wp-e2e-tests-gh-bridge' },
-			url: gitHubCalypsoBranchURL + e2eBranchName,
-		}, function( err, response, body ) {
-			if ( response.statusCode === 200 ) {
-				branchName = e2eBranchName;
-				branchArg = '-S';
-				jetpackBranchArg = '-B';
-				liveBranches = 'true';
-				calypsoSha = JSON.parse( body ).commit.sha;
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteJetpackTriggerLabel ) ) {
-				// Jetpack full suite
-				description = 'The e2e full Jetpack suite tests are running against your PR';
-				const envVars = {JETPACKHOST: 'PRESSABLE'};
-				log.info( 'Executing CALYPSO e2e full Jetpack suite tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, jetpackBranchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-jetpack', '-j -s mobile', description, sha, false, e2eTestsMainProject, null, envVars, calypsoSha );
-			}
-
-			if ( labelsArray.includes( calypsoFullSuiteSecureAuthTriggerLabel ) ) {
-				// Secure Auth full suite
-				description = 'The e2e full Secure Auth suite tests are running against your PR';
-				log.info( 'Executing CALYPSO e2e full Secure Auth suite tests for branch: \'' + e2eBranchName + '\'' );
-				executeCircleCIBuild( liveBranches, branchArg, branchName, e2eBranchName, pullRequestNum, 'ci/wp-e2e-tests-full-secure-auth', '-F -s desktop, mobile', description, sha, false, e2eTestsMainProject, null, null, calypsoSha );
 			}
 		} );
 	} else if ( event.payload.pull_request.state === 'open' && !labelsArray.includes( calypsoCanaryTriggerLabel ) &&

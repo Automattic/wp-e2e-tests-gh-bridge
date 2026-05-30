@@ -2,9 +2,15 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8.11.2
+      - image: cimg/node:16.14.2@sha256:6cbd411247ef92b5a3af5443b834e4872056446823fa43497dc9c0b60c74163b
 
     steps:
-      - checkout
-      - run: npm install
+      - run:
+          name: Checkout
+          command: |
+            git init
+            git remote add origin https://github.com/Automattic/wp-e2e-tests-gh-bridge.git
+            git fetch --depth=1 origin "$CIRCLE_SHA1"
+            git checkout --force FETCH_HEAD
+      - run: npm ci
       - run: npm test

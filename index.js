@@ -1,5 +1,5 @@
 const http = require( 'http' );
-const request = require( 'request-promise' );
+const got = require( 'got' );
 const createHandler = require( 'github-webhook-handler' );
 const { logger } = require( '@automattic/vip-go' );
 
@@ -31,6 +31,44 @@ const healthCheckPath = '/cache-healthcheck';
 
 const handler = createHandler( { path: gitHubWebHookPath, secret: process.env.BRIDGE_SECRET } );
 const log = logger( 'wp-e2e-tests-gh-bridge:webhook' );
+
+function normalizeResponse( response ) {
+	return {
+		body: response.body,
+		headers: response.headers,
+		statusCode: response.statusCode
+	};
+}
+
+function requestWithCallback( method, options, callback ) {
+	const responsePromise = got( options.url, {
+		body: options.body,
+		headers: options.headers,
+		method,
+		retry: { limit: 0 },
+		throwHttpErrors: false
+	} ).then( normalizeResponse );
+
+	if ( callback ) {
+		responsePromise.then(
+			response => callback( null, response, response.body ),
+			error => {
+				const response = error.response ? normalizeResponse( error.response ) : null;
+				callback( error, response, response ? response.body : null );
+			}
+		);
+		return responsePromise;
+	}
+
+	return responsePromise.catch( error => {
+		log.error( `HTTP ${ method } failed for ${ options.url }: ${ error.message }` );
+	} );
+}
+
+const request = {
+	get: ( options, callback ) => requestWithCallback( 'GET', options, callback ),
+	post: ( options, callback ) => requestWithCallback( 'POST', options, callback )
+};
 
 function sleep( ms ) {
 	return new Promise( resolve=>{

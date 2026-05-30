@@ -4,8 +4,8 @@
     "es6": true,
     "node": true
   },
-  "ecmaFeatures": {
-    "modules": true
+  "parserOptions": {
+    "ecmaVersion": 2018
   },
   "rules": {
     "brace-style": [ 1, "1tbs" ],
